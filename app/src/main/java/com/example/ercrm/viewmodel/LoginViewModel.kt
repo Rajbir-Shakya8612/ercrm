@@ -3,7 +3,7 @@ package com.example.ercrm.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ercrm.api.ApiClient
-import com.example.ercrm.data.LoginCredentials
+import com.example.ercrm.data.model.LoginRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -12,11 +12,11 @@ class LoginViewModel : ViewModel() {
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState
 
-    fun login(username: String, password: String) {
+    fun login(email: String, password: String) {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
             try {
-                val response = ApiClient.apiService.login(LoginCredentials(username, password))
+                val response = ApiClient.apiService.login(LoginRequest(email, password))
                 if (response.success) {
                     _loginState.value = LoginState.Success(response.token ?: "")
                 } else {
