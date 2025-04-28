@@ -17,10 +17,14 @@ class LoginViewModel : ViewModel() {
             _loginState.value = LoginState.Loading
             try {
                 val response = ApiClient.apiService.login(LoginRequest(email, password))
-                if (response.success) {
-                    _loginState.value = LoginState.Success(response.token ?: "")
+                if (response.isSuccessful) {
+                    response.body()?.let { loginResponse ->
+                        _loginState.value = LoginState.Success(loginResponse.token)
+                    } ?: run {
+                        _loginState.value = LoginState.Error("Empty response body")
+                    }
                 } else {
-                    _loginState.value = LoginState.Error(response.success == false)
+                    _loginState.value = LoginState.Error("Login failed: ${response.code()}")
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error(e.message ?: "An error occurred")
