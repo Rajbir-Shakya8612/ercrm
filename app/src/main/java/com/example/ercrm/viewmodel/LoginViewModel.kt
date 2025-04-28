@@ -20,7 +20,7 @@ class LoginViewModel : ViewModel() {
                 if (response.success) {
                     _loginState.value = LoginState.Success(response.token ?: "")
                 } else {
-                    _loginState.value = LoginState.Error(response.message)
+                    _loginState.value = LoginState.Error(response.success == false)
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error(e.message ?: "An error occurred")
