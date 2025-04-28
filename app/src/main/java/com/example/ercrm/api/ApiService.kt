@@ -1,13 +1,16 @@
 package com.example.ercrm.api
 
-import com.example.ercrm.data.LoginCredentials
-import com.example.ercrm.data.LoginResponse
+import com.example.ercrm.data.model.LoginRequest
+import com.example.ercrm.data.model.LoginResponse
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 interface ApiService {
-    @POST("login")
-    suspend fun login(@Body credentials: LoginCredentials): LoginResponse
+    @POST("api/login")
+    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 }
 
 object ApiClient {
