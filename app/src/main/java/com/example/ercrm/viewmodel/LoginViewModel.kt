@@ -3,7 +3,7 @@ package com.example.ercrm.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ercrm.data.model.LoginRequest
-import com.example.ercrm.repository.LoginRepository
+import com.example.ercrm.data.repository.LoginRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -39,12 +39,19 @@ class LoginViewModel : ViewModel() {
             try {
                 val response = repository.logout()
                 if (response.isSuccessful) {
+                    repository.clearToken()
                     _loginState.value = LoginState.LoggedOut
                 } else {
                     _loginState.value = LoginState.Error("Logout failed: ${response.code()}")
                 }
             } catch (e: Exception) {
-                _loginState.value = LoginState.Error(e.message ?: "An error occurred")
+                if (e is IllegalStateException) {
+                    // If we're not logged in, just clear state and proceed
+                    repository.clearToken()
+                    _loginState.value = LoginState.LoggedOut
+                } else {
+                    _loginState.value = LoginState.Error(e.message ?: "An error occurred")
+                }
             }
         }
     }
