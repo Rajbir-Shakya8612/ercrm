@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ercrm.ui.screens.LoginScreen
+import com.example.ercrm.ui.screens.RegisterScreen
 import com.example.ercrm.ui.screens.WelcomeScreen
 import com.example.ercrm.ui.theme.ERCRMTheme
 import com.example.ercrm.viewmodel.LoginState
@@ -28,23 +29,31 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val viewModel: LoginViewModel = viewModel()
                     val loginState by viewModel.loginState.collectAsState()
+                    var showRegister by remember { mutableStateOf(false) }
                     
-                    when (loginState) {
-                        is LoginState.Success -> {
+                    when {
+                        showRegister -> {
+                            RegisterScreen(
+                                onNavigateToLogin = { showRegister = false },
+                                onRegisterSuccess = { showRegister = false }
+                            )
+                        }
+                        loginState is LoginState.Success -> {
                             WelcomeScreen(
                                 onLogout = { viewModel.logout() }
                             )
                         }
-                        is LoginState.LoggedOut, 
-                        is LoginState.Idle,
-                        is LoginState.Error -> {
+                        loginState is LoginState.LoggedOut || 
+                        loginState is LoginState.Idle ||
+                        loginState is LoginState.Error -> {
                             LoginScreen(
                                 onLoginSuccess = { email, password ->
                                     viewModel.login(email, password)
-                                }
+                                },
+                                onNavigateToRegister = { showRegister = true }
                             )
                         }
-                        is LoginState.Loading -> {
+                        loginState is LoginState.Loading -> {
                             // You could show a loading indicator here if needed
                         }
                     }

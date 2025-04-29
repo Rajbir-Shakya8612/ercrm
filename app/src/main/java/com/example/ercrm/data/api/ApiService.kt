@@ -2,6 +2,7 @@ package com.example.ercrm.data.api
 
 import com.example.ercrm.data.model.LoginRequest
 import com.example.ercrm.data.model.LoginResponse
+import com.example.ercrm.data.model.RegisterRequest
 import retrofit2.Response
 import retrofit2.http.*
 import retrofit2.Retrofit
@@ -13,4 +14,7 @@ interface ApiService {
 
     @POST("api/logout")
     suspend fun logout(@Header("Authorization") token: String): Response<Unit>
+
+    @POST("api/register")
+    suspend fun register(@Body request: RegisterRequest): Response<LoginResponse>
 } 
