@@ -10,4 +10,8 @@ class LoginRepository {
         val loginRequest = LoginRequest(email = email, password = password)
         return RetrofitClient.apiService.login(loginRequest)
     }
+    
+    suspend fun logout(): Response<Unit> {
+        return RetrofitClient.apiService.logout()
+    }
 } 

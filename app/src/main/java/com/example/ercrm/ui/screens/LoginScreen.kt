@@ -10,17 +10,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.ercrm.viewmodel.LoginViewModel
-import com.example.ercrm.viewmodel.LoginState
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: (String, String) -> Unit
 ) {
-    val viewModel: LoginViewModel = viewModel()
-    val loginState by viewModel.loginState.collectAsState()
-    
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     
@@ -65,36 +59,13 @@ fun LoginScreen(
         )
         
         Button(
-            onClick = { viewModel.login(username, password) },
+            onClick = { onLoginSuccess(username, password) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            enabled = username.isNotBlank() && password.isNotBlank() && loginState !is LoginState.Loading
+            enabled = username.isNotBlank() && password.isNotBlank()
         ) {
-            if (loginState is LoginState.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            } else {
-                Text("Login")
-            }
-        }
-        
-        when (loginState) {
-            is LoginState.Success -> {
-                LaunchedEffect(Unit) {
-                    onLoginSuccess()
-                }
-            }
-            is LoginState.Error -> {
-                Text(
-                    text = (loginState as LoginState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-            }
-            else -> {}
+            Text("Login")
         }
     }
 } 

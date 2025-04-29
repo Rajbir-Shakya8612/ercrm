@@ -7,7 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    private const val BASE_URL = "http://127.0.0.1:8000/"
+    private const val BASE_URL = "https://plyvista.com/"
     private const val TIMEOUT = 30L
 
     private val okHttpClient = OkHttpClient.Builder()
