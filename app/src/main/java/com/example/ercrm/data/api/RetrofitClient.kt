@@ -16,6 +16,14 @@ object RetrofitClient {
         .addInterceptor(HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         })
+        .addInterceptor { chain ->
+            val request = chain.request()
+            try {
+                chain.proceed(request)
+            } catch (e: Exception) {
+                throw e
+            }
+        }
         .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
         .readTimeout(TIMEOUT, TimeUnit.SECONDS)
         .writeTimeout(TIMEOUT, TimeUnit.SECONDS)

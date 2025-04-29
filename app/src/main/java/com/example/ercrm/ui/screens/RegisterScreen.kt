@@ -17,8 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ercrm.viewmodel.RegisterState
 import com.example.ercrm.viewmodel.RegisterViewModel
-import androidx.compose.material3.MenuAnchorType
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,12 +26,15 @@ fun RegisterScreen(
 ) {
     val viewModel: RegisterViewModel = viewModel()
     val registerState by viewModel.registerState.collectAsState()
+    val roles by viewModel.roles.collectAsState()
+    val selectedRole by viewModel.selectedRole.collectAsState()
+    val isLoadingRoles by viewModel.isLoadingRoles.collectAsState()
+    val rolesError by viewModel.rolesError.collectAsState()
 
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var role by remember { mutableStateOf("Salesperson") }
     var brandPasskey by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
@@ -131,36 +132,86 @@ fun RegisterScreen(
             }
         )
 
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         ) {
-            OutlinedTextField(
-                value = role,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Role") },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth(),
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                }
-            )
-            ExposedDropdownMenu(
+            ExposedDropdownMenuBox(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onExpandedChange = { expanded = it }
             ) {
-                DropdownMenuItem(
-                    text = { Text("Salesperson") },
-                    onClick = {
-                        role = "Salesperson"
-                        expanded = false
-                    }
+                OutlinedTextField(
+                    value = selectedRole?.name ?: "Select Role",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Role") },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth(),
+                    trailingIcon = {
+                        if (isLoadingRoles) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                        }
+                    },
+                    enabled = !isLoadingRoles,
+                    isError = rolesError != null
                 )
+
+                if (!isLoadingRoles && roles.isNotEmpty()) {
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        roles.forEach { role ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(role.name)
+                                        Text(
+                                            text = role.description,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    viewModel.setSelectedRole(role.id)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Show error message if there's an error
+            rolesError?.let { error ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        onClick = { viewModel.fetchRoles() },
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
+                        Text("Retry")
+                    }
+                }
             }
         }
 
@@ -192,8 +243,8 @@ fun RegisterScreen(
                     email = email,
                     password = password,
                     confirmPassword = confirmPassword,
-                    role = role,
-                    brandPasskey = brandPasskey
+                    brandPasskey = brandPasskey,
+                    selectedRole = selectedRole?.id ?: 0
                 )
             },
             modifier = Modifier
@@ -201,7 +252,7 @@ fun RegisterScreen(
                 .height(50.dp),
             enabled = name.isNotBlank() && email.isNotBlank() && 
                      password.isNotBlank() && confirmPassword.isNotBlank() &&
-                     role.isNotBlank() && brandPasskey.isNotBlank()
+                     selectedRole != null && brandPasskey.isNotBlank() && !isLoadingRoles
         ) {
             Text("Register")
         }
