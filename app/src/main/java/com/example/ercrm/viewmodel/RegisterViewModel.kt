@@ -97,8 +97,15 @@ class RegisterViewModel : ViewModel() {
         brandPasskey: String,
         selectedRole: Int
     ) {
+        // Validate password match
         if (password != confirmPassword) {
             _registerState.value = RegisterState.Error("Passwords do not match")
+            return
+        }
+
+        // Validate passkey length
+        if (brandPasskey.length != 6) {
+            _registerState.value = RegisterState.Error("Brand passkey must be 6 characters long")
             return
         }
 
@@ -109,7 +116,9 @@ class RegisterViewModel : ViewModel() {
                     name = name,
                     email = email,
                     password = password,
-                    role_id = selectedRole
+                    password_confirmation = confirmPassword,
+                    role_id = selectedRole,
+                    passkey = brandPasskey
                 )
                 if (response.isSuccessful) {
                     val token = response.body()?.token
@@ -122,7 +131,15 @@ class RegisterViewModel : ViewModel() {
                     val errorMessage = when (response.code()) {
                         400 -> "Invalid registration data"
                         409 -> "Email already exists"
-                        422 -> "Validation error: Please check your input"
+                        422 -> {
+                            // Handle validation errors
+                            val errorBody = response.errorBody()?.string()
+                            if (errorBody?.contains("passkey") == true) {
+                                "Invalid brand passkey"
+                            } else {
+                                "Validation error: Please check your input"
+                            }
+                        }
                         else -> "Registration failed: ${response.code()}"
                     }
                     _registerState.value = RegisterState.Error(errorMessage)

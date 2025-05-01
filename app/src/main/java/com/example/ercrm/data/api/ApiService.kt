@@ -15,7 +15,7 @@ interface ApiService {
 
     @POST("api/logout")
     suspend fun logout(@Header("Authorization") token: String): Response<Unit>
-
+    @Headers("Accept: application/json")
     @POST("api/register")
     suspend fun register(@Body request: RegisterRequest): Response<LoginResponse>
 
