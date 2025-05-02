@@ -13,6 +13,9 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -29,7 +32,22 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideTokenManager(
+        @ApplicationContext context: Context
+    ): TokenManager {
+        return TokenManager(context)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(tokenManager: TokenManager): OkHttpClient {
+        // Initialize authToken from TokenManager if available
+        if (authToken == null) {
+            authToken = tokenManager.getToken()
+            Log.d(TAG, "Initialized auth token from TokenManager: ${authToken?.take(10)}...")
+        }
+
         return OkHttpClient.Builder()
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
@@ -64,6 +82,7 @@ object NetworkModule {
                             Log.e(TAG, "Authentication failed. Token may be invalid or expired.")
                             // Clear the token on authentication failure
                             setAuthToken(null)
+                            tokenManager.clearToken()
                         }
                     }
                     response

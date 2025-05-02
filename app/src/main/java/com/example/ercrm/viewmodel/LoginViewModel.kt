@@ -17,6 +17,13 @@ class LoginViewModel @Inject constructor(
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState
 
+    init {
+        // Check for existing token on initialization
+        repository.getCurrentToken()?.let { token ->
+            _loginState.value = LoginState.Success(token)
+        }
+    }
+
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading

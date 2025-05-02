@@ -5,13 +5,15 @@ import com.example.ercrm.data.api.ApiService
 import com.example.ercrm.data.model.LoginRequest
 import com.example.ercrm.data.model.LoginResponse
 import com.example.ercrm.di.NetworkModule
+import com.example.ercrm.di.TokenManager
 import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class LoginRepository @Inject constructor(
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val tokenManager: TokenManager
 ) {
     companion object {
         private const val TAG = "LoginRepository"
@@ -25,9 +27,12 @@ class LoginRepository @Inject constructor(
             val token = response.body()?.token
             Log.d(TAG, "Login successful, token received: ${token?.take(10)}...")
             
-            // Set the token in NetworkModule
-            NetworkModule.setAuthToken(token)
-            Log.d(TAG, "Token set in NetworkModule")
+            // Save token in both TokenManager and NetworkModule
+            token?.let {
+                tokenManager.saveToken(it)
+                NetworkModule.setAuthToken(it)
+            }
+            Log.d(TAG, "Token saved in TokenManager and NetworkModule")
         } else {
             Log.e(TAG, "Login failed: ${response.code()} - ${response.message()}")
         }
@@ -53,9 +58,10 @@ class LoginRepository @Inject constructor(
     // Clear the token when needed (e.g., on logout success or app exit)
     fun clearToken() {
         Log.d(TAG, "Clearing auth token")
+        tokenManager.clearToken()
         NetworkModule.setAuthToken(null)
     }
 
     // Get current token for debugging
-    fun getCurrentToken(): String? = NetworkModule.getAuthToken()
+    fun getCurrentToken(): String? = tokenManager.getToken()
 } 
