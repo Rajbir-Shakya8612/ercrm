@@ -89,12 +89,12 @@ dependencies {
     implementation("com.patrykandpatrick.vico:compose:1.13.0")
     implementation("com.patrykandpatrick.vico:compose-m3:1.13.0") // For Material3 support
 
-
-
-
     // Jetpack Compose BOM (optional but recommended)
     implementation(platform("androidx.compose:compose-bom:2024.04.00"))
 
+    implementation("com.google.accompanist:accompanist-pager:0.34.0")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.34.0")
+    implementation("androidx.compose.foundation:foundation:1.3.1")
 
 
     testImplementation(libs.junit)

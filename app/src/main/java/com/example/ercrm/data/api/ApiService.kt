@@ -5,7 +5,7 @@ import com.example.ercrm.data.model.LoginRequest
 import com.example.ercrm.data.model.LoginResponse
 import com.example.ercrm.data.model.RegisterRequest
 import com.example.ercrm.data.model.Role
-import com.example.ercrm.data.model.SalespersonDashboardResponse
+//import com.example.ercrm.data.model.NewDashboardScreen
 import retrofit2.Response
 import retrofit2.http.*
 import retrofit2.Retrofit
@@ -36,11 +36,11 @@ interface ApiService {
     @POST("api/attendance/checkout")
     suspend fun checkOut(@Body request: Map<String, String>): Response<AttendanceResponse>
 
-    @Headers("Accept: application/json")
-    @GET("api/salesperson/dashboard")
-    suspend fun getSalespersonDashboard(): Response<SalespersonDashboardResponse>
-
-    @Headers("Accept: application/json")
-    @GET("api/admin/dashboard")
-    suspend fun getAdminDashboard(): Response<SalespersonDashboardResponse>
+//    @Headers("Accept: application/json")
+//    @GET("api/salesperson/dashboard")
+//    suspend fun getSalespersonDashboard(): Response<SalespersonDashboardResponse>
+//
+//    @Headers("Accept: application/json")
+//    @GET("api/admin/dashboard")
+//    suspend fun getAdminDashboard(): Response<SalespersonDashboardResponse>
 } 

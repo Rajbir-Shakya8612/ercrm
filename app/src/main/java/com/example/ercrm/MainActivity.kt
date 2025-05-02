@@ -12,7 +12,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.ercrm.ui.screens.SalespersonDashboardScreen
+import com.example.ercrm.ui.screens.NewDashboardScreen
 import com.example.ercrm.ui.screens.LoginScreen
 import com.example.ercrm.ui.screens.RegisterScreen
 import com.example.ercrm.ui.theme.ERCRMTheme
@@ -44,11 +44,7 @@ class MainActivity : ComponentActivity() {
                         }
                         loginState is LoginState.Success -> {
                             key(loginState) {
-                                SalespersonDashboardScreen(
-                                    onNavigateToLeadDetails = { /* TODO: Navigate to Lead Details */ },
-                                    onNavigateToMeetingDetails = { /* TODO: Navigate to Meeting Details */ },
-                                    onNavigateToTaskDetails = { /* TODO: Navigate to Task Details */ }
-                                )
+                                NewDashboardScreen()
                             }
                         }
                         loginState is LoginState.LoggedOut || 
