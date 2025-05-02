@@ -23,7 +23,6 @@ fun SalespersonDashboardScreen(
 ) {
     val dashboardState by viewModel.dashboardState.collectAsState()
     val error by viewModel.error.collectAsState()
-    val scrollState = rememberScrollState()
 
     LaunchedEffect(Unit) {
         viewModel.loadDashboard()
@@ -56,7 +55,6 @@ fun SalespersonDashboardScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .verticalScroll(scrollState)
                             .padding(16.dp)
                     ) {
                         // Calendar Section

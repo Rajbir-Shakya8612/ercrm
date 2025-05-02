@@ -63,7 +63,7 @@ fun OverviewSection(
             columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.height(280.dp) // Fixed height for the grid
         ) {
             items(metrics) { metric ->
                 MetricCard(metric)

@@ -4,7 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
@@ -41,11 +43,13 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         loginState is LoginState.Success -> {
-                            SalespersonDashboardScreen(
-                                onNavigateToLeadDetails = { /* TODO: Navigate to Lead Details */ },
-                                onNavigateToMeetingDetails = { /* TODO: Navigate to Meeting Details */ },
-                                onNavigateToTaskDetails = { /* TODO: Navigate to Task Details */ }
-                            )
+                            key(loginState) {
+                                SalespersonDashboardScreen(
+                                    onNavigateToLeadDetails = { /* TODO: Navigate to Lead Details */ },
+                                    onNavigateToMeetingDetails = { /* TODO: Navigate to Meeting Details */ },
+                                    onNavigateToTaskDetails = { /* TODO: Navigate to Task Details */ }
+                                )
+                            }
                         }
                         loginState is LoginState.LoggedOut || 
                         loginState is LoginState.Idle ||
@@ -58,7 +62,9 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         loginState is LoginState.Loading -> {
-                            // You could show a loading indicator here if needed
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                CircularProgressIndicator()
+                            }
                         }
                     }
                 }

@@ -27,10 +27,15 @@ class SalespersonDashboardViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    init {
+        loadDashboard()
+    }
+
     fun loadDashboard() {
         viewModelScope.launch {
             try {
                 _dashboardState.value = DashboardState.Loading
+                _error.value = null
                 
                 if (NetworkModule.getAuthToken() == null) {
                     _dashboardState.value = DashboardState.Error("Not authenticated. Please login again.")
@@ -78,6 +83,7 @@ class SalespersonDashboardViewModel @Inject constructor(
     fun checkIn(location: Location) {
         viewModelScope.launch {
             try {
+                _error.value = null
                 val locationJson = buildLocationJson(location)
                 val requestBody = mapOf("check_in_location" to locationJson)
 
@@ -86,7 +92,6 @@ class SalespersonDashboardViewModel @Inject constructor(
                     response.body()?.let { dashboardResponse ->
                         if (dashboardResponse.success) {
                             loadDashboard()
-                            _error.value = null
                         } else {
                             _error.value = dashboardResponse.message
                         }
@@ -103,6 +108,7 @@ class SalespersonDashboardViewModel @Inject constructor(
     fun checkOut(location: Location) {
         viewModelScope.launch {
             try {
+                _error.value = null
                 val locationJson = buildLocationJson(location)
                 val requestBody = mapOf("check_out_location" to locationJson)
 
@@ -111,7 +117,6 @@ class SalespersonDashboardViewModel @Inject constructor(
                     response.body()?.let { dashboardResponse ->
                         if (dashboardResponse.success) {
                             loadDashboard()
-                            _error.value = null
                         } else {
                             _error.value = dashboardResponse.message
                         }
