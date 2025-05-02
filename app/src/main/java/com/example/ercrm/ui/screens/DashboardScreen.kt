@@ -102,29 +102,50 @@ fun DashboardScreen(
                 Text(
                     text = "Overview",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
-                
-                Spacer(modifier = Modifier.height(8.dp))
 
-                // Metrics Cards
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                    items(getMetricsData(data)) { metric ->
+                // Metrics Cards in pairs
+                val metrics = getMetricsData(data)
+                for (i in metrics.indices step 2) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // First card
                         MetricCard(
-                            title = metric.title,
-                            value = metric.value,
-                            icon = metric.icon,
-                            color = metric.color,
-                            onClick = when (metric.title) {
+                            title = metrics[i].title,
+                            value = metrics[i].value,
+                            icon = metrics[i].icon,
+                            color = metrics[i].color,
+                            onClick = when (metrics[i].title) {
                                 "Leads" -> onNavigateToLeads
                                 "Tasks" -> onNavigateToTasks
                                 "Meetings" -> onNavigateToMeetings
                                 else -> ({})
-                            }
+                            },
+                            modifier = Modifier.weight(1f)
                         )
+                        
+                        // Second card (if exists)
+                        if (i + 1 < metrics.size) {
+                            MetricCard(
+                                title = metrics[i + 1].title,
+                                value = metrics[i + 1].value,
+                                icon = metrics[i + 1].icon,
+                                color = metrics[i + 1].color,
+                                onClick = when (metrics[i + 1].title) {
+                                    "Leads" -> onNavigateToLeads
+                                    "Tasks" -> onNavigateToTasks
+                                    "Meetings" -> onNavigateToMeetings
+                                    else -> ({})
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
 
@@ -242,11 +263,11 @@ fun MetricCard(
     value: String,
     icon: @Composable () -> Unit,
     color: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
-            .width(160.dp)
+        modifier = modifier
             .height(120.dp)
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
