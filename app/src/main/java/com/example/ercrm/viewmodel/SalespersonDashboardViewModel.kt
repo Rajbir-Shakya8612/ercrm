@@ -4,24 +4,21 @@ import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ercrm.data.api.ApiService
-import com.example.ercrm.data.model.DashboardData
-import com.example.ercrm.data.model.DashboardResponse
-import com.example.ercrm.data.repository.DashboardRepository
+import com.example.ercrm.data.model.SalespersonDashboardData
+import com.example.ercrm.data.model.SalespersonDashboardResponse
+import com.example.ercrm.data.repository.SalespersonDashboardRepository
 import com.example.ercrm.di.NetworkModule
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
-class DashboardViewModel @Inject constructor(
+class SalespersonDashboardViewModel @Inject constructor(
     private val apiService: ApiService,
-    private val dashboardRepository: DashboardRepository
+    private val dashboardRepository: SalespersonDashboardRepository
 ) : ViewModel() {
 
     private val _dashboardState = MutableStateFlow<DashboardState>(DashboardState.Loading)
@@ -35,7 +32,6 @@ class DashboardViewModel @Inject constructor(
             try {
                 _dashboardState.value = DashboardState.Loading
                 
-                // Check if we have a valid token
                 if (NetworkModule.getAuthToken() == null) {
                     _dashboardState.value = DashboardState.Error("Not authenticated. Please login again.")
                     return@launch
@@ -44,16 +40,16 @@ class DashboardViewModel @Inject constructor(
                 val response = dashboardRepository.getDashboard()
                 if (response.isSuccessful) {
                     val dashboardResponse = response.body()
-                    android.util.Log.d("DashboardViewModel", "Raw response: $dashboardResponse")
+                    android.util.Log.d("SalespersonDashboardViewModel", "Raw response: $dashboardResponse")
 
                     if (dashboardResponse != null) {
-                        _dashboardState.value = DashboardState.Success(dashboardResponse.data ?: DashboardData())
+                        _dashboardState.value = DashboardState.Success(dashboardResponse.data ?: SalespersonDashboardData())
                     } else {
                         _dashboardState.value = DashboardState.Error("Empty response from server")
                     }
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    android.util.Log.e("DashboardViewModel", "Error response: $errorBody")
+                    android.util.Log.e("SalespersonDashboardViewModel", "Error response: $errorBody")
                     val errorMessage = when (response.code()) {
                         401 -> {
                             NetworkModule.setAuthToken(null)
@@ -67,7 +63,7 @@ class DashboardViewModel @Inject constructor(
                     _dashboardState.value = DashboardState.Error(errorMessage)
                 }
             } catch (e: Exception) {
-                android.util.Log.e("DashboardViewModel", "Network error", e)
+                android.util.Log.e("SalespersonDashboardViewModel", "Network error", e)
                 val errorMessage = when (e) {
                     is java.net.UnknownHostException -> "No internet connection"
                     is java.net.SocketTimeoutException -> "Connection timed out"
@@ -85,11 +81,10 @@ class DashboardViewModel @Inject constructor(
                 val locationJson = buildLocationJson(location)
                 val requestBody = mapOf("check_in_location" to locationJson)
 
-                val response = apiService.checkIn(requestBody)
+                val response = dashboardRepository.checkIn(requestBody)
                 if (response.isSuccessful) {
                     response.body()?.let { dashboardResponse ->
                         if (dashboardResponse.success) {
-                            // Refresh dashboard data after check-in
                             loadDashboard()
                             _error.value = null
                         } else {
@@ -111,11 +106,10 @@ class DashboardViewModel @Inject constructor(
                 val locationJson = buildLocationJson(location)
                 val requestBody = mapOf("check_out_location" to locationJson)
 
-                val response = apiService.checkOut(requestBody)
+                val response = dashboardRepository.checkOut(requestBody)
                 if (response.isSuccessful) {
                     response.body()?.let { dashboardResponse ->
                         if (dashboardResponse.success) {
-                            // Refresh dashboard data after check-out
                             loadDashboard()
                             _error.value = null
                         } else {
@@ -140,22 +134,10 @@ class DashboardViewModel @Inject constructor(
             }
         """.trimIndent()
     }
-
-    private fun formatTimeToIST(time: String?): String? {
-        if (time == null) return null
-        return try {
-            val utcDateTime = LocalDateTime.parse(time, DateTimeFormatter.ISO_DATE_TIME)
-            val istDateTime = utcDateTime.atZone(ZoneId.of("UTC"))
-                .withZoneSameInstant(ZoneId.of("Asia/Kolkata"))
-            istDateTime.format(DateTimeFormatter.ofPattern("hh:mm a"))
-        } catch (e: Exception) {
-            time
-        }
-    }
 }
 
 sealed class DashboardState {
     object Loading : DashboardState()
-    data class Success(val data: DashboardData) : DashboardState()
+    data class Success(val data: SalespersonDashboardData) : DashboardState()
     data class Error(val message: String) : DashboardState()
 } 

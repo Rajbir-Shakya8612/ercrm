@@ -5,7 +5,7 @@ import com.example.ercrm.data.model.LoginRequest
 import com.example.ercrm.data.model.LoginResponse
 import com.example.ercrm.data.model.RegisterRequest
 import com.example.ercrm.data.model.Role
-import com.example.ercrm.data.model.DashboardResponse
+import com.example.ercrm.data.model.SalespersonDashboardResponse
 import retrofit2.Response
 import retrofit2.http.*
 import retrofit2.Retrofit
@@ -38,9 +38,9 @@ interface ApiService {
 
     @Headers("Accept: application/json")
     @GET("api/salesperson/dashboard")
-    suspend fun getSalespersonDashboard(): Response<DashboardResponse>
+    suspend fun getSalespersonDashboard(): Response<SalespersonDashboardResponse>
 
     @Headers("Accept: application/json")
     @GET("api/admin/dashboard")
-    suspend fun getAdminDashboard(): Response<DashboardResponse>
+    suspend fun getAdminDashboard(): Response<SalespersonDashboardResponse>
 } 
