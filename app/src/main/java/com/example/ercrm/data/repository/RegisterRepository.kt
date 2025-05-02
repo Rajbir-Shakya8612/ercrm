@@ -1,11 +1,16 @@
 package com.example.ercrm.data.repository
 
-import com.example.ercrm.data.api.RetrofitClient
+import com.example.ercrm.data.api.ApiService
 import com.example.ercrm.data.model.LoginResponse
 import com.example.ercrm.data.model.RegisterRequest
 import retrofit2.Response
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class RegisterRepository {
+@Singleton
+class RegisterRepository @Inject constructor(
+    private val apiService: ApiService
+) {
     suspend fun register(
         name: String,
         email: String,
@@ -42,6 +47,6 @@ class RegisterRepository {
             target_amount = target_amount,
             target_leads = target_leads
         )
-        return RetrofitClient.apiService.register(registerRequest)
+        return apiService.register(registerRequest)
     }
 } 

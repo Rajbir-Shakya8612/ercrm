@@ -6,14 +6,17 @@ import androidx.lifecycle.viewModelScope
 import com.example.ercrm.data.model.Role
 import com.example.ercrm.data.repository.RegisterRepository
 import com.example.ercrm.data.repository.RoleRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class RegisterViewModel : ViewModel() {
-    private val registerRepository = RegisterRepository()
-    private val roleRepository = RoleRepository()
-
+@HiltViewModel
+class RegisterViewModel @Inject constructor(
+    private val registerRepository: RegisterRepository,
+    private val roleRepository: RoleRepository
+) : ViewModel() {
     private val _registerState = MutableStateFlow<RegisterState>(RegisterState.Idle)
     val registerState: StateFlow<RegisterState> = _registerState
 

@@ -9,14 +9,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.ercrm.ui.screens.DashboardScreen
 import com.example.ercrm.ui.screens.LoginScreen
 import com.example.ercrm.ui.screens.RegisterScreen
-import com.example.ercrm.ui.screens.WelcomeScreen
 import com.example.ercrm.ui.theme.ERCRMTheme
 import com.example.ercrm.viewmodel.LoginState
 import com.example.ercrm.viewmodel.LoginViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,7 +29,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val viewModel: LoginViewModel = viewModel()
+                    val viewModel: LoginViewModel = hiltViewModel()
                     val loginState by viewModel.loginState.collectAsState()
                     var showRegister by remember { mutableStateOf(false) }
                     
@@ -39,8 +41,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         loginState is LoginState.Success -> {
-                            WelcomeScreen(
-                                onLogout = { viewModel.logout() }
+                            DashboardScreen(
+                                onNavigateToLeads = { /* TODO: Navigate to Leads */ },
+                                onNavigateToTasks = { /* TODO: Navigate to Tasks */ },
+                                onNavigateToMeetings = { /* TODO: Navigate to Meetings */ }
                             )
                         }
                         loginState is LoginState.LoggedOut || 

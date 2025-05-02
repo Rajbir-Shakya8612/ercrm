@@ -1,15 +1,20 @@
 package com.example.ercrm.data.repository
 
 import android.util.Log
-import com.example.ercrm.data.api.RetrofitClient
+import com.example.ercrm.data.api.ApiService
 import com.example.ercrm.data.model.Role
 import retrofit2.Response
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class RoleRepository {
+@Singleton
+class RoleRepository @Inject constructor(
+    private val apiService: ApiService
+) {
     suspend fun getRoles(): Response<List<Role>> {
         Log.d("RoleRepository", "Fetching roles from API...")
         try {
-            val response = RetrofitClient.apiService.getRoles()
+            val response = apiService.getRoles()
             Log.d("RoleRepository", "Roles API response: ${response.isSuccessful}, code: ${response.code()}, roles count: ${response.body()?.size}")
             
             if (!response.isSuccessful) {
