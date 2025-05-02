@@ -12,6 +12,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.ercrm.ui.screens.NewDashboardScreen
 import com.example.ercrm.ui.screens.LoginScreen
 import com.example.ercrm.ui.screens.RegisterScreen
@@ -34,6 +37,7 @@ class MainActivity : ComponentActivity() {
                     val viewModel: LoginViewModel = hiltViewModel()
                     val loginState by viewModel.loginState.collectAsState()
                     var showRegister by remember { mutableStateOf(false) }
+                    val navController = rememberNavController()
                     
                     when {
                         showRegister -> {
@@ -44,7 +48,14 @@ class MainActivity : ComponentActivity() {
                         }
                         loginState is LoginState.Success -> {
                             key(loginState) {
-                                NewDashboardScreen()
+                                NavHost(navController = navController, startDestination = "dashboard") {
+                                    composable("dashboard") {
+                                        NewDashboardScreen(navController = navController)
+                                    }
+                                    composable("attendance_dashboard") {
+                                        NewDashboardScreen(navController = navController)
+                                    }
+                                }
                             }
                         }
                         loginState is LoginState.LoggedOut || 

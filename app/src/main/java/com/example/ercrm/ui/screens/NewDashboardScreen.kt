@@ -17,12 +17,16 @@ import androidx.compose.ui.text.style.*
 import androidx.compose.ui.unit.*
 import com.example.ercrm.R
 import com.google.accompanist.pager.*
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 
 @Composable
-fun NewDashboardScreen() {
+fun NewDashboardScreen(navController: NavController) {
     var selectedTab by remember { mutableStateOf(0) }
     var selectedBottom by remember { mutableStateOf(0) }
     val pagerState = rememberPagerState(initialPage = 0)
+    var showAttendanceDashboard by remember { mutableStateOf(false) }
 
     Scaffold(
         bottomBar = {
@@ -69,7 +73,7 @@ fun NewDashboardScreen() {
             // 🧭 Tabs + Grid Content
             DashboardTabs(selectedTab) { selectedTab = it }
             Spacer(modifier = Modifier.height(18.dp))
-            DashboardGrid()
+            DashboardGrid(onAttendanceClick = { navController.navigate("attendance_dashboard") })
             Spacer(modifier = Modifier.height(18.dp))
         }
     }
@@ -171,17 +175,17 @@ fun DashboardTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
 }
 
 @Composable
-fun DashboardGrid() {
+fun DashboardGrid(onAttendanceClick: () -> Unit) {
     val gridItems = listOf(
-        Pair(Icons.Default.Fingerprint, "Attendance"),
-        Pair(Icons.Default.Receipt, "Leads"),
-        Pair(Icons.Default.BarChart, "Sales"),
-        Pair(Icons.Default.AccountBalance, "Plans"),
-        Pair(Icons.Default.Event, "Meetings"),
-        Pair(Icons.Default.CheckCircle, "Tasks"),
-        Pair(Icons.Default.AccountBalanceWallet, "Point Wallet"),
-        Pair(Icons.Default.QrCode, "Primary Sales"),
-        Pair(Icons.Default.ShoppingCart, "Secondary Sales")
+        Triple(Icons.Default.Fingerprint, "Attendance", onAttendanceClick),
+        Triple(Icons.Default.Receipt, "Leads", {}),
+        Triple(Icons.Default.BarChart, "Sales", {}),
+        Triple(Icons.Default.AccountBalance, "Plans", {}),
+        Triple(Icons.Default.Event, "Meetings", {}),
+        Triple(Icons.Default.CheckCircle, "Tasks", {}),
+        Triple(Icons.Default.AccountBalanceWallet, "Point Wallet", {}),
+        Triple(Icons.Default.QrCode, "Primary Sales", {}),
+        Triple(Icons.Default.ShoppingCart, "Secondary Sales", {})
     )
 
     LazyVerticalGrid(
@@ -193,14 +197,15 @@ fun DashboardGrid() {
         verticalArrangement = Arrangement.spacedBy(12.dp),
         userScrollEnabled = false
     ) {
-        items(gridItems) { (icon, label) ->
+        items(gridItems) { (icon, label, onClick) ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
                     modifier = Modifier
                         .size(62.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(Color.White)
-                        .padding(18.dp),
+                        .padding(18.dp)
+                        .clickable { onClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(icon, contentDescription = label, tint = OrangePrimary, modifier = Modifier.size(32.dp))
@@ -211,7 +216,6 @@ fun DashboardGrid() {
         }
     }
 }
-
 
 @Composable
 fun BottomNavigationBar(selected: Int, onSelect: (Int) -> Unit) {
@@ -257,3 +261,70 @@ fun BottomNavigationBar(selected: Int, onSelect: (Int) -> Unit) {
 }
 
 private val OrangePrimary = Color(0xFFFF6F00)
+
+@Composable
+fun AttendanceDashboardScreen(onBack: () -> Unit) {
+    var isCheckedIn by remember { mutableStateOf(false) }
+    var checkInTime by remember { mutableStateOf<String?>(null) }
+    var checkOutTime by remember { mutableStateOf<String?>(null) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Attendance", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        }
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            text = if (isCheckedIn) "You are Checked In" else "You are not Checked In",
+            fontSize = 18.sp,
+            color = if (isCheckedIn) Color(0xFF388E3C) else Color(0xFFD32F2F),
+            fontWeight = FontWeight.Medium
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        if (!isCheckedIn) {
+            Button(
+                onClick = {
+                    isCheckedIn = true
+                    checkInTime = java.text.SimpleDateFormat("hh:mm a, dd MMM yyyy").format(java.util.Date())
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Check In")
+            }
+        } else {
+            Button(
+                onClick = {
+                    isCheckedIn = false
+                    checkOutTime = java.text.SimpleDateFormat("hh:mm a, dd MMM yyyy").format(java.util.Date())
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+            ) {
+                Text("Check Out")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        checkInTime?.let {
+            Text("Check In Time: $it", fontSize = 16.sp)
+        }
+        checkOutTime?.let {
+            Text("Check Out Time: $it", fontSize = 16.sp)
+        }
+    }
+}
