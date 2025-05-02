@@ -20,13 +20,17 @@ import com.google.accompanist.pager.*
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.ercrm.data.model.LocationData
+import com.example.ercrm.viewmodel.AttendanceViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun NewDashboardScreen(navController: NavController) {
     var selectedTab by remember { mutableStateOf(0) }
     var selectedBottom by remember { mutableStateOf(0) }
     val pagerState = rememberPagerState(initialPage = 0)
-    var showAttendanceDashboard by remember { mutableStateOf(false) }
 
     Scaffold(
         bottomBar = {
@@ -38,7 +42,7 @@ fun NewDashboardScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState()) // Make content scrollable if needed
+                .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -73,7 +77,11 @@ fun NewDashboardScreen(navController: NavController) {
             // 🧭 Tabs + Grid Content
             DashboardTabs(selectedTab) { selectedTab = it }
             Spacer(modifier = Modifier.height(18.dp))
-            DashboardGrid(onAttendanceClick = { navController.navigate("attendance_dashboard") })
+            DashboardGrid(
+                onAttendanceClick = { 
+                    navController.navigate("attendance_dashboard")
+                }
+            )
             Spacer(modifier = Modifier.height(18.dp))
         }
     }
@@ -263,68 +271,201 @@ fun BottomNavigationBar(selected: Int, onSelect: (Int) -> Unit) {
 private val OrangePrimary = Color(0xFFFF6F00)
 
 @Composable
-fun AttendanceDashboardScreen(onBack: () -> Unit) {
-    var isCheckedIn by remember { mutableStateOf(false) }
-    var checkInTime by remember { mutableStateOf<String?>(null) }
-    var checkOutTime by remember { mutableStateOf<String?>(null) }
+fun AttendanceDashboardScreen(
+    navController: NavController,
+    viewModel: AttendanceViewModel = hiltViewModel()
+) {
+    val attendanceState by viewModel.attendanceState.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+    var showLocationPermissionDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        // Request location permission when screen opens
+        showLocationPermissionDialog = true
+    }
+
+    if (showLocationPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showLocationPermissionDialog = false },
+            title = { Text("Location Permission Required") },
+            text = { Text("This app needs location permission to record your attendance. Please grant location permission to continue.") },
+            confirmButton = {
+                TextButton(onClick = { showLocationPermissionDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    if (showErrorDialog && error != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showErrorDialog = false
+                viewModel.clearError()
+            },
+            title = { Text("Error") },
+            text = { Text(error ?: "An error occurred") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showErrorDialog = false
+                    viewModel.clearError()
+                }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    LaunchedEffect(error) {
+        if (error != null) {
+            showErrorDialog = true
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.White)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Header
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            IconButton(onClick = { navController.navigateUp() }) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Attendance", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Attendance",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
         }
+
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Date Display
         Text(
-            text = if (isCheckedIn) "You are Checked In" else "You are not Checked In",
-            fontSize = 18.sp,
-            color = if (isCheckedIn) Color(0xFF388E3C) else Color(0xFFD32F2F),
-            fontWeight = FontWeight.Medium
+            text = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date()),
+            fontSize = 16.sp,
+            color = Color.Gray,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
+
+        // Status Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (attendanceState.isCheckedIn) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = attendanceState.status ?: if (attendanceState.isCheckedIn) "You are Checked In" else "You are not Checked In",
+                    fontSize = 18.sp,
+                    color = if (attendanceState.isCheckedIn) Color(0xFF388E3C) else Color(0xFFD32F2F),
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (!isCheckedIn) {
-            Button(
-                onClick = {
-                    isCheckedIn = true
-                    checkInTime = java.text.SimpleDateFormat("hh:mm a, dd MMM yyyy").format(java.util.Date())
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Check In")
-            }
-        } else {
-            Button(
-                onClick = {
-                    isCheckedIn = false
-                    checkOutTime = java.text.SimpleDateFormat("hh:mm a, dd MMM yyyy").format(java.util.Date())
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
-            ) {
-                Text("Check Out")
+        // Check In/Out Button
+        Button(
+            onClick = {
+                if (!attendanceState.isCheckedIn) {
+                    // Request location and check in
+                    // TODO: Implement location request
+                    viewModel.checkIn(LocationData(0.0, 0.0, 0f)) // Replace with actual location
+                } else {
+                    // Request location and check out
+                    // TODO: Implement location request
+                    viewModel.checkOut(LocationData(0.0, 0.0, 0f)) // Replace with actual location
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (!attendanceState.isCheckedIn) OrangePrimary else Color(0xFFD32F2F)
+            ),
+            shape = RoundedCornerShape(12.dp),
+            enabled = !isLoading
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color.White
+                )
+            } else {
+                Text(
+                    if (!attendanceState.isCheckedIn) "Check In" else "Check Out",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        checkInTime?.let {
-            Text("Check In Time: $it", fontSize = 16.sp)
-        }
-        checkOutTime?.let {
-            Text("Check Out Time: $it", fontSize = 16.sp)
+        // Time Records
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                attendanceState.check_in_time?.let {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Check In Time:", fontSize = 16.sp, color = Color.Gray)
+                        Text(it, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                attendanceState.check_out_time?.let {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Check Out Time:", fontSize = 16.sp, color = Color.Gray)
+                        Text(it, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+                attendanceState.working_hours?.let {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Working Hours:", fontSize = 16.sp, color = Color.Gray)
+                        Text(it, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
         }
     }
 }
