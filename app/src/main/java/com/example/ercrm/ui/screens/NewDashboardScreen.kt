@@ -218,7 +218,7 @@ fun BottomNavigationBar(selected: Int, onSelect: (Int) -> Unit) {
     val items = listOf(
         Pair(Icons.Default.Home, "Home"),
         Pair(Icons.Default.Star, "Favorites"),
-        Pair(Icons.Default.QrCodeScanner, "Scan to Pay"),
+        Pair(Icons.Default.Dashboard, "Dashboard"),
         Pair(Icons.Default.LocalOffer, "Offers"),
         Pair(Icons.Default.Person, "Profile")
     )
