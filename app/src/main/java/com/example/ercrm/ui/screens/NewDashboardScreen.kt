@@ -28,6 +28,10 @@ import java.util.*
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.ZoneId
+import com.example.ercrm.utils.LocationHelper
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
+import dagger.hilt.android.EntryPointAccessors
 
 @Composable
 fun NewDashboardScreen(navController: NavController) {
@@ -285,6 +289,12 @@ fun AttendanceDashboardScreen(
     var showErrorDialog by remember { mutableStateOf(false) }
     val canCheckIn by viewModel.canCheckIn.collectAsState()
     val canCheckOut by viewModel.canCheckOut.collectAsState()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val locationHelper = EntryPointAccessors.fromApplication(
+        context.applicationContext,
+        com.example.ercrm.utils.LocationHelperEntryPoint::class.java
+    ).locationHelper()
 
     LaunchedEffect(Unit) {
         // Request location permission when screen opens
@@ -393,12 +403,24 @@ fun AttendanceDashboardScreen(
         // Check In/Out Button
         Button(
             onClick = {
-                if (canCheckIn) {
-                    // TODO: Implement location request
-                    viewModel.checkIn(LocationData(0.0, 0.0, 0f)) // Replace with actual location
-                } else if (canCheckOut) {
-                    // TODO: Implement location request
-                    viewModel.checkOut(LocationData(0.0, 0.0, 0f)) // Replace with actual location
+                coroutineScope.launch {
+                    try {
+                        val location = locationHelper.getLastLocation()
+                        val locData = LocationData(
+                            latitude = location.latitude,
+                            longitude = location.longitude,
+                            accuracy = location.accuracy
+                        )
+                        if (canCheckIn) {
+                            viewModel.checkIn(locData)
+                        } else if (canCheckOut) {
+                            viewModel.checkOut(locData)
+                        }
+                    } catch (e: SecurityException) {
+                        showLocationPermissionDialog = true
+                    } catch (e: Exception) {
+                        showErrorDialog = true
+                    }
                 }
             },
             modifier = Modifier
