@@ -9,12 +9,6 @@ data class AttendanceResponse(
     val working_hours: String? = null
 )
 
-data class LocationData(
-    val latitude: Double,
-    val longitude: Double,
-    val accuracy: Float
-)
-
 data class AttendanceState(
     val isCheckedIn: Boolean = false,
     val check_in_time: String? = null,

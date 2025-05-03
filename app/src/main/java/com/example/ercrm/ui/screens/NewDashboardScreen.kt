@@ -409,12 +409,14 @@ fun AttendanceDashboardScreen(
                         val locData = LocationData(
                             latitude = location.latitude,
                             longitude = location.longitude,
-                            accuracy = location.accuracy
+                            accuracy = location.accuracy,
+                            type = if (canCheckIn) "check_in" else "check_out",
+                            tracked_at = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
                         )
                         if (canCheckIn) {
-                            viewModel.checkIn(locData)
+                            viewModel.checkIn(locData, context)
                         } else if (canCheckOut) {
-                            viewModel.checkOut(locData)
+                            viewModel.checkOut(locData, context)
                         }
                     } catch (e: SecurityException) {
                         showLocationPermissionDialog = true

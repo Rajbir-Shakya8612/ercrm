@@ -6,6 +6,7 @@ import com.example.ercrm.data.model.LoginResponse
 import com.example.ercrm.data.model.RegisterRequest
 import com.example.ercrm.data.model.Role
 import com.example.ercrm.data.model.AttendanceStatusResponse
+import com.example.ercrm.data.model.LocationData
 //import com.example.ercrm.data.model.NewDashboardScreen
 import retrofit2.Response
 import retrofit2.http.*
@@ -40,6 +41,9 @@ interface ApiService {
     @Headers("Accept: application/json")
     @POST("api/attendance/checkout")
     suspend fun checkOut(@Body requestBody: Map<String, String>): Response<AttendanceResponse>
+
+    @POST("api/location/tracks")
+    suspend fun trackLocation(@Body locationData: LocationData): Response<Any>
 
 //    @Headers("Accept: application/json")
 //    @GET("api/salesperson/dashboard")

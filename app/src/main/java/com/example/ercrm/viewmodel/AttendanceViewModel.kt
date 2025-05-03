@@ -1,6 +1,7 @@
 package com.example.ercrm.viewmodel
 
-import android.location.Location
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ercrm.data.api.ApiService
@@ -8,6 +9,7 @@ import com.example.ercrm.data.model.AttendanceResponse
 import com.example.ercrm.data.model.AttendanceState
 import com.example.ercrm.data.model.LocationData
 import com.example.ercrm.data.model.AttendanceStatusResponse
+import com.example.ercrm.service.LocationTrackingService
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -70,11 +72,14 @@ class AttendanceViewModel @Inject constructor(
         }
     }
 
-    fun checkIn(locationData: LocationData) {
+    fun checkIn(locationData: LocationData, context: Context) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                val locationJson = Gson().toJson(locationData)
+                val locationJson = Gson().toJson(locationData.copy(
+                    type = "check_in",
+                    tracked_at = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+                ))
                 val response = apiService.checkIn(mapOf(
                     "check_in_location" to locationJson
                 ))
@@ -89,6 +94,12 @@ class AttendanceViewModel @Inject constructor(
                         )
                         _canCheckIn.value = false
                         _canCheckOut.value = true
+
+                        // Start location tracking service
+                        val serviceIntent = Intent(context, LocationTrackingService::class.java).apply {
+                            action = "START_TRACKING"
+                        }
+                        context.startService(serviceIntent)
                     }
                 } else {
                     _error.value = response.body()?.message ?: "Failed to check in"
@@ -101,11 +112,14 @@ class AttendanceViewModel @Inject constructor(
         }
     }
 
-    fun checkOut(locationData: LocationData) {
+    fun checkOut(locationData: LocationData, context: Context) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                val locationJson = Gson().toJson(locationData)
+                val locationJson = Gson().toJson(locationData.copy(
+                    type = "check_out",
+                    tracked_at = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+                ))
                 val response = apiService.checkOut(mapOf(
                     "check_out_location" to locationJson
                 ))
@@ -120,6 +134,12 @@ class AttendanceViewModel @Inject constructor(
                         )
                         _canCheckIn.value = false
                         _canCheckOut.value = false
+
+                        // Stop location tracking service
+                        val serviceIntent = Intent(context, LocationTrackingService::class.java).apply {
+                            action = "STOP_TRACKING"
+                        }
+                        context.startService(serviceIntent)
                     }
                 } else {
                     _error.value = response.body()?.message ?: "Failed to check out"
