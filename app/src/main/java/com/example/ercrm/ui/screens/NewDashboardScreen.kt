@@ -17,7 +17,7 @@ import androidx.compose.ui.text.style.*
 import androidx.compose.ui.unit.*
 import com.example.ercrm.R
 import com.google.accompanist.pager.*
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -36,7 +36,7 @@ import com.example.ercrm.ui.components.CalendarSection
 import java.time.LocalDate
 
 @Composable
-fun NewDashboardScreen(navController: NavController) {
+fun NewDashboardScreen(navController: NavHostController) {
     var selectedTab by remember { mutableStateOf(0) }
     var selectedBottom by remember { mutableStateOf(0) }
     val pagerState = rememberPagerState(initialPage = 0)
@@ -87,9 +87,8 @@ fun NewDashboardScreen(navController: NavController) {
             DashboardTabs(selectedTab) { selectedTab = it }
             Spacer(modifier = Modifier.height(18.dp))
             DashboardGrid(
-                onAttendanceClick = { 
-                    navController.navigate("attendance_dashboard")
-                }
+                onAttendanceClick = { navController.navigate("attendance_dashboard") },
+                onLeadsClick = { navController.navigate("leads_dashboard") }
             )
             Spacer(modifier = Modifier.height(18.dp))
         }
@@ -192,10 +191,10 @@ fun DashboardTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
 }
 
 @Composable
-fun DashboardGrid(onAttendanceClick: () -> Unit) {
+fun DashboardGrid(onAttendanceClick: () -> Unit, onLeadsClick: () -> Unit) {
     val gridItems = listOf(
         Triple(Icons.Default.Fingerprint, "Attendance", onAttendanceClick),
-        Triple(Icons.Default.Receipt, "Leads", {}),
+        Triple(Icons.Default.Receipt, "Leads", onLeadsClick),
         Triple(Icons.Default.BarChart, "Sales", {}),
         Triple(Icons.Default.AccountBalance, "Plans", {}),
         Triple(Icons.Default.Event, "Meetings", {}),
@@ -281,7 +280,7 @@ private val OrangePrimary = Color(0xFFFF6F00)
 
 @Composable
 fun AttendanceDashboardScreen(
-    navController: NavController,
+    navController: NavHostController,
     viewModel: AttendanceViewModel = hiltViewModel()
 ) {
     val attendanceState by viewModel.attendanceState.collectAsState()
@@ -523,5 +522,78 @@ fun formatToKolkataTime(isoString: String?): String {
         kolkataTime.format(DateTimeFormatter.ofPattern("hh:mm a"))
     } catch (e: Exception) {
         isoString ?: ""
+    }
+}
+
+@Composable
+fun LeadsDashboardScreen(navController: NavHostController) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(16.dp)
+    ) {
+        // Header
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { navController.navigateUp() }) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Leads Dashboard", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+        // Kanban Columns
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            KanbanColumn(title = "New", color = Color(0xFFE3F2FD), modifier = Modifier.weight(1f))
+            KanbanColumn(title = "In Progress", color = Color(0xFFFFF9C4), modifier = Modifier.weight(1f))
+            KanbanColumn(title = "Won", color = Color(0xFFC8E6C9), modifier = Modifier.weight(1f))
+            KanbanColumn(title = "Lost", color = Color(0xFFFFCDD2), modifier = Modifier.weight(1f))
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+        // Add/Edit/Delete Buttons (static for now)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Button(onClick = { /* TODO: Add Lead */ }, colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary)) {
+                Text("Add Lead", color = Color.White)
+            }
+            Button(onClick = { /* TODO: Edit Lead */ }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))) {
+                Text("Edit Lead", color = Color.White)
+            }
+            Button(onClick = { /* TODO: Delete Lead */ }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))) {
+                Text("Delete Lead", color = Color.White)
+            }
+        }
+    }
+}
+
+@Composable
+fun KanbanColumn(title: String, color: Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .padding(4.dp)
+            .background(color, RoundedCornerShape(12.dp))
+            .padding(8.dp)
+    ) {
+        Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
+        // Static sample cards
+        repeat(2) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Column(modifier = Modifier.padding(8.dp)) {
+                    Text("Lead Name", fontWeight = FontWeight.Bold)
+                    Text("Details about the lead", fontSize = 12.sp, color = Color.Gray)
+                }
+            }
+        }
     }
 }

@@ -55,6 +55,9 @@ class MainActivity : ComponentActivity() {
                                     composable("attendance_dashboard") {
                                         com.example.ercrm.ui.screens.AttendanceDashboardScreen(navController = navController)
                                     }
+                                    composable("leads_dashboard") {
+                                        com.example.ercrm.ui.screens.LeadsDashboardScreen(navController = navController)
+                                    }
                                 }
                             }
                         }
