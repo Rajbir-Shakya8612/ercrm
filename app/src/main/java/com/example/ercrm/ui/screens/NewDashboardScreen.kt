@@ -25,6 +25,9 @@ import com.example.ercrm.data.model.LocationData
 import com.example.ercrm.viewmodel.AttendanceViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.ZoneId
 
 @Composable
 fun NewDashboardScreen(navController: NavController) {
@@ -450,7 +453,7 @@ fun AttendanceDashboardScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Check In Time:", fontSize = 16.sp, color = Color.Gray)
-                        Text(it, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text(formatToKolkataTime(it), fontSize = 16.sp, fontWeight = FontWeight.Medium)
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -460,7 +463,7 @@ fun AttendanceDashboardScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Check Out Time:", fontSize = 16.sp, color = Color.Gray)
-                        Text(it, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text(formatToKolkataTime(it), fontSize = 16.sp, fontWeight = FontWeight.Medium)
                     }
                 }
                 attendanceState.working_hours?.let {
@@ -475,5 +478,16 @@ fun AttendanceDashboardScreen(
                 }
             }
         }
+    }
+}
+
+fun formatToKolkataTime(isoString: String?): String {
+    return try {
+        if (isoString.isNullOrBlank()) return ""
+        val zonedDateTime = ZonedDateTime.parse(isoString)
+        val kolkataTime = zonedDateTime.withZoneSameInstant(ZoneId.of("Asia/Kolkata"))
+        kolkataTime.format(DateTimeFormatter.ofPattern("hh:mm a"))
+    } catch (e: Exception) {
+        isoString ?: ""
     }
 }
