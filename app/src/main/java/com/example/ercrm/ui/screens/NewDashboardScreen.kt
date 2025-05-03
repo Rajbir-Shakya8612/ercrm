@@ -280,6 +280,8 @@ fun AttendanceDashboardScreen(
     val error by viewModel.error.collectAsState()
     var showLocationPermissionDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
+    val canCheckIn by viewModel.canCheckIn.collectAsState()
+    val canCheckOut by viewModel.canCheckOut.collectAsState()
 
     LaunchedEffect(Unit) {
         // Request location permission when screen opens
@@ -388,12 +390,10 @@ fun AttendanceDashboardScreen(
         // Check In/Out Button
         Button(
             onClick = {
-                if (!attendanceState.isCheckedIn) {
-                    // Request location and check in
+                if (canCheckIn) {
                     // TODO: Implement location request
                     viewModel.checkIn(LocationData(0.0, 0.0, 0f)) // Replace with actual location
-                } else {
-                    // Request location and check out
+                } else if (canCheckOut) {
                     // TODO: Implement location request
                     viewModel.checkOut(LocationData(0.0, 0.0, 0f)) // Replace with actual location
                 }
@@ -402,10 +402,14 @@ fun AttendanceDashboardScreen(
                 .fillMaxWidth()
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (!attendanceState.isCheckedIn) OrangePrimary else Color(0xFFD32F2F)
+                containerColor = when {
+                    canCheckIn -> OrangePrimary
+                    canCheckOut -> Color(0xFFD32F2F)
+                    else -> Color.LightGray
+                }
             ),
             shape = RoundedCornerShape(12.dp),
-            enabled = !isLoading
+            enabled = (!isLoading && (canCheckIn || canCheckOut))
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
@@ -414,7 +418,11 @@ fun AttendanceDashboardScreen(
                 )
             } else {
                 Text(
-                    if (!attendanceState.isCheckedIn) "Check In" else "Check Out",
+                    when {
+                        canCheckIn -> "Check In"
+                        canCheckOut -> "Check Out"
+                        else -> "Attendance Complete"
+                    },
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )

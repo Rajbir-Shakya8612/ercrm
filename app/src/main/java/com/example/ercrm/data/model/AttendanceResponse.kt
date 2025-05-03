@@ -21,4 +21,17 @@ data class AttendanceState(
     val check_out_time: String? = null,
     val working_hours: String? = null,
     val status: String? = null
+)
+
+data class AttendanceData(
+    val check_in_time: String? = null,
+    val check_out_time: String? = null,
+    val working_hours: String? = null,
+    val status: String? = null
+)
+
+data class AttendanceStatusResponse(
+    val attendance: AttendanceData?,
+    val canCheckIn: Boolean,
+    val canCheckOut: Boolean
 ) 

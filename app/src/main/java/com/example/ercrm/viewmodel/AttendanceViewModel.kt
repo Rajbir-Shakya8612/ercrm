@@ -7,6 +7,8 @@ import com.example.ercrm.data.api.ApiService
 import com.example.ercrm.data.model.AttendanceResponse
 import com.example.ercrm.data.model.AttendanceState
 import com.example.ercrm.data.model.LocationData
+import com.example.ercrm.data.model.AttendanceStatusResponse
+import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +32,11 @@ class AttendanceViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _canCheckIn = MutableStateFlow(true)
+    val canCheckIn: StateFlow<Boolean> = _canCheckIn.asStateFlow()
+    private val _canCheckOut = MutableStateFlow(false)
+    val canCheckOut: StateFlow<Boolean> = _canCheckOut.asStateFlow()
+
     init {
         checkTodayAttendance()
     }
@@ -38,15 +45,23 @@ class AttendanceViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                // TODO: Add API call to get today's attendance status
-                // For now, we'll just set initial state
-                _attendanceState.value = AttendanceState(
-                    isCheckedIn = false,
-                    check_in_time = null,
-                    check_out_time = null,
-                    working_hours = null,
-                    status = "Not Checked In"
-                )
+                val response = apiService.getAttendanceStatus()
+                if (response.isSuccessful) {
+                    response.body()?.let { statusResp ->
+                        val att = statusResp.attendance
+                        _attendanceState.value = AttendanceState(
+                            isCheckedIn = statusResp.canCheckOut, // checked in if can check out
+                            check_in_time = att?.check_in_time,
+                            check_out_time = att?.check_out_time,
+                            working_hours = att?.working_hours,
+                            status = att?.status
+                        )
+                        _canCheckIn.value = statusResp.canCheckIn
+                        _canCheckOut.value = statusResp.canCheckOut
+                    }
+                } else {
+                    _error.value = "Failed to fetch attendance status"
+                }
             } catch (e: Exception) {
                 _error.value = e.message
             } finally {
@@ -59,12 +74,10 @@ class AttendanceViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
+                val locationJson = Gson().toJson(locationData)
                 val response = apiService.checkIn(mapOf(
-                    "latitude" to locationData.latitude.toString(),
-                    "longitude" to locationData.longitude.toString(),
-                    "accuracy" to locationData.accuracy.toString()
+                    "check_in_location" to locationJson
                 ))
-                
                 if (response.isSuccessful) {
                     response.body()?.let { attendanceResponse ->
                         _attendanceState.value = AttendanceState(
@@ -74,9 +87,11 @@ class AttendanceViewModel @Inject constructor(
                             working_hours = attendanceResponse.working_hours,
                             status = attendanceResponse.status
                         )
+                        _canCheckIn.value = false
+                        _canCheckOut.value = true
                     }
                 } else {
-                    _error.value = "Failed to check in"
+                    _error.value = response.body()?.message ?: "Failed to check in"
                 }
             } catch (e: Exception) {
                 _error.value = e.message
@@ -90,12 +105,10 @@ class AttendanceViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
+                val locationJson = Gson().toJson(locationData)
                 val response = apiService.checkOut(mapOf(
-                    "latitude" to locationData.latitude.toString(),
-                    "longitude" to locationData.longitude.toString(),
-                    "accuracy" to locationData.accuracy.toString()
+                    "check_out_location" to locationJson
                 ))
-                
                 if (response.isSuccessful) {
                     response.body()?.let { attendanceResponse ->
                         _attendanceState.value = AttendanceState(
@@ -105,9 +118,11 @@ class AttendanceViewModel @Inject constructor(
                             working_hours = attendanceResponse.working_hours,
                             status = attendanceResponse.status
                         )
+                        _canCheckIn.value = false
+                        _canCheckOut.value = false
                     }
                 } else {
-                    _error.value = "Failed to check out"
+                    _error.value = response.body()?.message ?: "Failed to check out"
                 }
             } catch (e: Exception) {
                 _error.value = e.message
