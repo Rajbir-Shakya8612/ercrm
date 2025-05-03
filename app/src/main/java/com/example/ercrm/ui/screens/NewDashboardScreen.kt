@@ -32,6 +32,8 @@ import com.example.ercrm.utils.LocationHelper
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import dagger.hilt.android.EntryPointAccessors
+import com.example.ercrm.ui.components.CalendarSection
+import java.time.LocalDate
 
 @Composable
 fun NewDashboardScreen(navController: NavController) {
@@ -502,6 +504,14 @@ fun AttendanceDashboardScreen(
                 }
             }
         }
+
+        // Calendar Section
+        Spacer(modifier = Modifier.height(12.dp))
+        var selectedDate by remember { mutableStateOf(java.time.LocalDate.now()) }
+        com.example.ercrm.ui.components.CalendarSection(
+            selectedDate = selectedDate,
+            onDateSelected = { selectedDate = it }
+        )
     }
 }
 
