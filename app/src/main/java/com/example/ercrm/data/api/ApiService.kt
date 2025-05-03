@@ -7,6 +7,9 @@ import com.example.ercrm.data.model.RegisterRequest
 import com.example.ercrm.data.model.Role
 import com.example.ercrm.data.model.AttendanceStatusResponse
 import com.example.ercrm.data.model.LocationData
+import com.example.ercrm.data.model.Lead
+import com.example.ercrm.data.model.LeadRequest
+import com.example.ercrm.data.model.LeadsResponse
 //import com.example.ercrm.data.model.NewDashboardScreen
 import retrofit2.Response
 import retrofit2.http.*
@@ -44,6 +47,22 @@ interface ApiService {
 
     @POST("api/location/tracks")
     suspend fun trackLocation(@Body locationData: LocationData): Response<Any>
+
+    @Headers("Accept: application/json")
+    @GET("api/salesperson/leads")
+    suspend fun getLeads(): Response<LeadsResponse>
+
+    @Headers("Accept: application/json")
+    @POST("api/salesperson/leads")
+    suspend fun createLead(@Body lead: LeadRequest): Response<Lead>
+
+    @Headers("Accept: application/json")
+    @PUT("api/salesperson/leads/{id}")
+    suspend fun updateLead(@Path("id") id: Int, @Body lead: LeadRequest): Response<Lead>
+
+    @Headers("Accept: application/json")
+    @DELETE("api/salesperson/leads/{id}")
+    suspend fun deleteLead(@Path("id") id: Int): Response<Unit>
 
 //    @Headers("Accept: application/json")
 //    @GET("api/salesperson/dashboard")

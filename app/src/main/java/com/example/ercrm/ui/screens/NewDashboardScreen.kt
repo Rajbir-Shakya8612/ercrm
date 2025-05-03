@@ -34,6 +34,11 @@ import kotlinx.coroutines.launch
 import dagger.hilt.android.EntryPointAccessors
 import com.example.ercrm.ui.components.CalendarSection
 import java.time.LocalDate
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ercrm.viewmodel.LeadsViewModel
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.window.Dialog
 
 @Composable
 fun NewDashboardScreen(navController: NavHostController) {
@@ -526,73 +531,396 @@ fun formatToKolkataTime(isoString: String?): String {
 }
 
 @Composable
-fun LeadsDashboardScreen(navController: NavHostController) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(16.dp)
-    ) {
-        // Header
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { navController.navigateUp() }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Leads Dashboard", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-        // Kanban Columns
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: LeadsViewModel = hiltViewModel()) {
+    val leadsState by leadsViewModel.leadsState.collectAsState()
+    val isLoading by leadsViewModel.isLoading.collectAsState()
+    val error by leadsViewModel.error.collectAsState()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var showLeadDialog by remember { mutableStateOf(false) }
+    var dialogStatusId by remember { mutableStateOf<Int?>(null) }
+    var dialogLead by remember { mutableStateOf<com.example.ercrm.data.model.Lead?>(null) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+
+    // Fetch leads on first load
+    LaunchedEffect(Unit) { leadsViewModel.fetchLeads() }
+    LaunchedEffect(error) { if (error != null) showErrorDialog = true }
+
+    Box(Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(8.dp)
         ) {
-            KanbanColumn(title = "New", color = Color(0xFFE3F2FD), modifier = Modifier.weight(1f))
-            KanbanColumn(title = "In Progress", color = Color(0xFFFFF9C4), modifier = Modifier.weight(1f))
-            KanbanColumn(title = "Won", color = Color(0xFFC8E6C9), modifier = Modifier.weight(1f))
-            KanbanColumn(title = "Lost", color = Color(0xFFFFCDD2), modifier = Modifier.weight(1f))
+            // Header
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { navController.navigateUp() }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Leads Dashboard", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            if (isLoading) {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (leadsState == null) {
+                Text("No data found", color = Color.Gray, modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else {
+                // Kanban Board
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                ) {
+                    leadsState?.lead_statuses?.forEach { status ->
+                        val leadsForStatus = leadsState?.leads?.filter { it.status_id == status.id } ?: emptyList()
+                        Column(
+                            Modifier
+                                .width(340.dp)
+                                .padding(12.dp)
+                                .background(
+                                    color = status.color?.let { Color(android.graphics.Color.parseColor(it)) } ?: Color(0xFFF5F5F5),
+                                    shape = RoundedCornerShape(20.dp)
+                                )
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(status.name, fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color.Black, modifier = Modifier.padding(12.dp))
+                                Spacer(Modifier.weight(1f))
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .background(Color.White, shape = CircleShape)
+                                        .border(2.dp, OrangePrimary, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(leadsForStatus.size.toString(), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = OrangePrimary)
+                                }
+                                IconButton(onClick = {
+                                    dialogStatusId = status.id
+                                    dialogLead = null
+                                    showLeadDialog = true
+                                }, modifier = Modifier.size(38.dp)) {
+                                    Icon(Icons.Default.Add, contentDescription = "Add Lead", tint = OrangePrimary, modifier = Modifier.size(28.dp))
+                                }
+                            }
+                            if (leadsForStatus.isEmpty()) {
+                                Text("No leads", color = Color.Gray, modifier = Modifier.padding(12.dp))
+                            } else {
+                                leadsForStatus.forEach { lead ->
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(240.dp)
+                                            .padding(bottom = 16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                                        elevation = CardDefaults.cardElevation(8.dp)
+                                    ) {
+                                        Column(Modifier.padding(20.dp)) {
+                                            Text(lead.name, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                                            Spacer(Modifier.height(10.dp))
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFF388E3C), modifier = Modifier.size(22.dp))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text(lead.phone, fontSize = 18.sp)
+                                            }
+                                            if (!lead.email.isNullOrBlank()) {
+                                                Spacer(Modifier.height(8.dp))
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(Icons.Default.Email, contentDescription = null, tint = Color(0xFF1976D2), modifier = Modifier.size(22.dp))
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text(lead.email, fontSize = 18.sp)
+                                                }
+                                            }
+                                            if (!lead.address.isNullOrBlank()) {
+                                                Spacer(Modifier.height(8.dp))
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(Icons.Default.Home, contentDescription = null, tint = OrangePrimary, modifier = Modifier.size(22.dp))
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text(lead.address, fontSize = 18.sp)
+                                                }
+                                            }
+                                            if (!lead.follow_up_date.isNullOrBlank()) {
+                                                Spacer(Modifier.height(8.dp))
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = Color(0xFFD32F2F), modifier = Modifier.size(22.dp))
+                                                    Spacer(Modifier.width(8.dp))
+                                                    val formattedDate = try {
+                                                        java.time.LocalDate.parse(lead.follow_up_date.substring(0,10)).format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                                                    } catch (e: Exception) { lead.follow_up_date }
+                                                    Text("Follow-up: $formattedDate", fontSize = 18.sp, color = Color(0xFFD32F2F))
+                                                }
+                                            }
+                                            Spacer(Modifier.height(16.dp))
+                                            Row(
+                                                Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                IconButton(
+                                                    onClick = {
+                                                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${lead.phone}"))
+                                                        context.startActivity(intent)
+                                                    },
+                                                    modifier = Modifier.size(48.dp)
+                                                ) {
+                                                    Icon(Icons.Default.Phone, contentDescription = "Call", tint = Color(0xFF388E3C), modifier = Modifier.size(36.dp))
+                                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        val url = "https://wa.me/${lead.phone}"
+                                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                                        context.startActivity(intent)
+                                                    },
+                                                    modifier = Modifier.size(48.dp)
+                                                ) {
+                                                    Icon(Icons.Default.Chat, contentDescription = "WhatsApp", tint = Color(0xFF25D366), modifier = Modifier.size(36.dp))
+                                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        dialogLead = lead
+                                                        dialogStatusId = lead.status_id
+                                                        showLeadDialog = true
+                                                    },
+                                                    modifier = Modifier.size(48.dp)
+                                                ) {
+                                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF1976D2), modifier = Modifier.size(36.dp))
+                                                }
+                                                IconButton(
+                                                    onClick = { leadsViewModel.deleteLead(lead.id) },
+                                                    modifier = Modifier.size(48.dp)
+                                                ) {
+                                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFD32F2F), modifier = Modifier.size(36.dp))
+                                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        if (lead.latitude != null && lead.longitude != null) {
+                                                            val gmmIntentUri = Uri.parse("geo:${lead.latitude},${lead.longitude}?q=${lead.latitude},${lead.longitude}")
+                                                            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                                                            mapIntent.setPackage("com.google.android.apps.maps")
+                                                            context.startActivity(mapIntent)
+                                                        }
+                                                    },
+                                                    modifier = Modifier.size(48.dp)
+                                                ) {
+                                                    Icon(Icons.Default.LocationOn, contentDescription = "View Location", tint = Color(0xFFF57C00), modifier = Modifier.size(36.dp))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-        Spacer(modifier = Modifier.height(24.dp))
-        // Add/Edit/Delete Buttons (static for now)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        // Add new dialog usage
+        if (showLeadDialog) {
+            AddLeadDialog(
+                statuses = leadsState?.lead_statuses ?: emptyList(),
+                onAdd = { leadReq ->
+                    coroutineScope.launch {
+                        val locationHelper = EntryPointAccessors.fromApplication(
+                            context.applicationContext,
+                            com.example.ercrm.utils.LocationHelperEntryPoint::class.java
+                        ).locationHelper()
+                        val location = locationHelper.getLastLocation()
+                        if (dialogLead == null) {
+                            leadsViewModel.createLead(
+                                leadReq.copy(
+                                    latitude = location.latitude,
+                                    longitude = location.longitude,
+                                    status_id = dialogStatusId ?: leadReq.status_id
+                                )
+                            ) { showLeadDialog = false; dialogLead = null; dialogStatusId = null }
+                        } else {
+                            leadsViewModel.updateLead(
+                                dialogLead!!.id,
+                                leadReq.copy(
+                                    latitude = location.latitude,
+                                    longitude = location.longitude,
+                                    status_id = dialogStatusId ?: leadReq.status_id
+                                )
+                            ) { showLeadDialog = false; dialogLead = null; dialogStatusId = null }
+                        }
+                    }
+                },
+                onDismiss = { showLeadDialog = false; dialogLead = null; dialogStatusId = null },
+                initialStatusId = dialogStatusId,
+                initialLead = dialogLead
+            )
+        }
+        // Error Dialog
+        if (showErrorDialog && error != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    showErrorDialog = false
+                    leadsViewModel.clearError()
+                },
+                title = { Text("Error") },
+                text = { Text(error ?: "An error occurred") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showErrorDialog = false
+                        leadsViewModel.clearError()
+                    }) { Text("OK") }
+                }
+            )
+        }
+        // Floating Action Button for adding new lead
+        FloatingActionButton(
+            onClick = {
+                dialogStatusId = null
+                dialogLead = null
+                showLeadDialog = true
+            },
+            containerColor = OrangePrimary,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp)
         ) {
-            Button(onClick = { /* TODO: Add Lead */ }, colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary)) {
-                Text("Add Lead", color = Color.White)
-            }
-            Button(onClick = { /* TODO: Edit Lead */ }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))) {
-                Text("Edit Lead", color = Color.White)
-            }
-            Button(onClick = { /* TODO: Delete Lead */ }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))) {
-                Text("Delete Lead", color = Color.White)
+            Icon(Icons.Default.Add, contentDescription = "Add Lead", tint = Color.White, modifier = Modifier.size(32.dp))
+        }
+    }
+}
+
+@Composable
+fun AddLeadDialog(
+    statuses: List<com.example.ercrm.data.model.Status>,
+    onAdd: (com.example.ercrm.data.model.LeadRequest) -> Unit,
+    onDismiss: () -> Unit,
+    initialStatusId: Int?,
+    initialLead: com.example.ercrm.data.model.Lead? = null
+) {
+    var name by remember { mutableStateOf(initialLead?.name ?: "") }
+    var phone by remember { mutableStateOf(initialLead?.phone ?: "") }
+    var email by remember { mutableStateOf(initialLead?.email ?: "") }
+    var address by remember { mutableStateOf(initialLead?.address ?: "") }
+    var statusId by remember { mutableStateOf(initialLead?.status_id ?: initialStatusId ?: statuses.firstOrNull()?.id ?: 0) }
+    var followUpDate by remember { mutableStateOf(initialLead?.follow_up_date?.let {
+        try { java.time.LocalDate.parse(it.substring(0,10)).format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy")) } catch (e: Exception) { it }
+    } ?: "") }
+    var description by remember { mutableStateOf(initialLead?.description ?: "") }
+    var notes by remember { mutableStateOf(initialLead?.additional_info ?: "") }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val today = java.time.LocalDate.now()
+    val dateFormatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy")
+
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .heightIn(min = 600.dp)
+                .background(Color.Transparent),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = Color.White,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 600.dp)
+            ) {
+                Column(
+                    Modifier
+                        .padding(20.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(if (initialLead == null) "Add Lead" else "Edit Lead", fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.padding(bottom = 16.dp))
+                    OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name*") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone*") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email*") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(8.dp))
+                    DropdownMenuBox(
+                        label = "Status*",
+                        options = statuses.map { it.name },
+                        selectedIndex = statuses.indexOfFirst { it.id == statusId },
+                        onSelectedIndexChange = { statusId = statuses[it].id },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = followUpDate,
+                        onValueChange = {},
+                        label = { Text("Follow-up Date (dd-MM-yyyy)*") },
+                        readOnly = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showDatePicker = true }
+                    )
+                    if (showDatePicker) {
+                        LaunchedEffect(showDatePicker) {
+                            val initial = try { java.time.LocalDate.parse(followUpDate, dateFormatter) } catch (e: Exception) { today }
+                            android.app.DatePickerDialog(
+                                context,
+                                { _, year, month, dayOfMonth ->
+                                    val picked = java.time.LocalDate.of(year, month + 1, dayOfMonth)
+                                    followUpDate = picked.format(dateFormatter)
+                                    showDatePicker = false
+                                },
+                                initial.year, initial.monthValue - 1, initial.dayOfMonth
+                            ).show()
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text("Notes") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(16.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = onDismiss) { Text("Cancel") }
+                        Spacer(Modifier.width(8.dp))
+                        Button(onClick = {
+                            onAdd(
+                                com.example.ercrm.data.model.LeadRequest(
+                                    name = name,
+                                    phone = phone,
+                                    email = email,
+                                    company = null,
+                                    address = address,
+                                    status_id = statusId,
+                                    follow_up_date = try { java.time.LocalDate.parse(followUpDate, dateFormatter).toString() } catch (e: Exception) { followUpDate },
+                                    latitude = null,
+                                    longitude = null,
+                                    additional_info = notes,
+                                    description = description
+                                )
+                            )
+                        }) { Text(if (initialLead == null) "Add Lead" else "Update Lead") }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun KanbanColumn(title: String, color: Color, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .padding(4.dp)
-            .background(color, RoundedCornerShape(12.dp))
-            .padding(8.dp)
-    ) {
-        Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
-        // Static sample cards
-        repeat(2) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
-                Column(modifier = Modifier.padding(8.dp)) {
-                    Text("Lead Name", fontWeight = FontWeight.Bold)
-                    Text("Details about the lead", fontSize = 12.sp, color = Color.Gray)
-                }
+fun DropdownMenuBox(label: String, options: List<String>, selectedIndex: Int, onSelectedIndexChange: (Int) -> Unit, modifier: Modifier = Modifier) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        OutlinedTextField(
+            value = options.getOrNull(selectedIndex) ?: "",
+            onValueChange = {},
+            label = { Text(label) },
+            readOnly = true,
+            modifier = Modifier.clickable { expanded = true }
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEachIndexed { index, option ->
+                DropdownMenuItem(onClick = {
+                    onSelectedIndexChange(index)
+                    expanded = false
+                }, text = { Text(option) })
             }
         }
     }
