@@ -47,6 +47,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.material.icons.filled.ArrowDropDown
 
 @Composable
 fun NewDashboardScreen(navController: NavHostController) {
@@ -821,6 +824,7 @@ fun AddLeadDialog(
     val today = java.time.LocalDate.now()
     val dateFormatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy")
     var statusDropdownExpanded by remember { mutableStateOf(false) }
+    val statusInteractionSource = remember { MutableInteractionSource() }
 
     Dialog(onDismissRequest = onDismiss) {
         Box(
@@ -865,27 +869,41 @@ fun AddLeadDialog(
                     OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
                     // Status Dropdown (improved)
-                    OutlinedTextField(
-                        value = statuses.find { it.id == statusId }?.name ?: "",
-                        onValueChange = {},
-                        label = { Text("Status*") },
-                        readOnly = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { statusDropdownExpanded = true }
-                    )
-                    DropdownMenu(
-                        expanded = statusDropdownExpanded,
-                        onDismissRequest = { statusDropdownExpanded = false }
-                    ) {
-                        statuses.forEach { status ->
-                            DropdownMenuItem(
-                                onClick = {
-                                    statusId = status.id
-                                    statusDropdownExpanded = false
-                                },
-                                text = { Text(status.name) }
-                            )
+                    Box {
+                        OutlinedTextField(
+                            value = statuses.find { it.id == statusId }?.name ?: "",
+                            onValueChange = {},
+                            label = { Text("Status*") },
+                            readOnly = true,
+                            trailingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowDropDown,
+                                    contentDescription = "Show statuses",
+                                    modifier = Modifier.clickable { statusDropdownExpanded = true }
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .pointerInput(Unit) {} // disables keyboard
+                                .clickable(
+                                    interactionSource = statusInteractionSource,
+                                    indication = null
+                                ) { statusDropdownExpanded = true }
+                        )
+                        DropdownMenu(
+                            expanded = statusDropdownExpanded,
+                            onDismissRequest = { statusDropdownExpanded = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            statuses.forEach { status ->
+                                DropdownMenuItem(
+                                    onClick = {
+                                        statusId = status.id
+                                        statusDropdownExpanded = false
+                                    },
+                                    text = { Text(status.name) }
+                                )
+                            }
                         }
                     }
                     Spacer(Modifier.height(8.dp))
