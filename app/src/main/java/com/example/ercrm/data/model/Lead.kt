@@ -13,15 +13,20 @@ data class Lead(
     val latitude: Double?,
     val longitude: Double?,
     val additional_info: String?,
+    val notes: String?,
     val description: String?,
     val created_at: String?,
-    val updated_at: String?
+    val updated_at: String?,
+    val lost_reason: String?,
+    val closed_won_reason: String?
 )
 
 data class Status(
     val id: Int,
     val name: String,
-    val color: String?
+    val slug: String,
+    val color: String?,
+    val description: String?
 )
 
 data class LeadsResponse(
@@ -39,6 +44,8 @@ data class LeadRequest(
     val follow_up_date: String?,
     val latitude: Double?,
     val longitude: Double?,
-    val additional_info: String?,
-    val description: String?
+    val notes: String?,
+    val description: String?,
+    val lost_reason: String? = null,
+    val closed_won_reason: String? = null
 ) 
