@@ -552,6 +552,8 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
     var dialogStatusId by remember { mutableStateOf<Int?>(null) }
     var dialogLead by remember { mutableStateOf<com.example.ercrm.data.model.Lead?>(null) }
     var showErrorDialog by remember { mutableStateOf(false) }
+    var showDetailsDialog by remember { mutableStateOf(false) }
+    var detailsLead by remember { mutableStateOf<com.example.ercrm.data.model.Lead?>(null) }
 
     // Fetch leads on first load
     LaunchedEffect(Unit) { leadsViewModel.fetchLeads() }
@@ -590,8 +592,8 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                         val leadsForStatus = leadsState?.leads?.filter { it.status_id == status.id } ?: emptyList()
                         Column(
                             Modifier
-                                .width(340.dp)
-                                .padding(12.dp)
+                                .width(360.dp)
+                                .padding(10.dp)
                                 .background(
                                     color = status.color?.let { Color(android.graphics.Color.parseColor(it)) } ?: Color(0xFFF5F5F5),
                                     shape = RoundedCornerShape(20.dp)
@@ -601,7 +603,12 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                 Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(180.dp)
+                                        .padding(0.dp),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
                                     Text(status.name, fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color.Black, modifier = Modifier.padding(12.dp))
                                 }
                                 Spacer(Modifier.weight(1f))
@@ -632,13 +639,13 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                     leadsForStatus.forEach { lead ->
                                         Card(
                                             modifier = Modifier
-                                                .width(300.dp)
+                                                .width(320.dp)
                                                 .height(280.dp)
-                                                .padding(bottom = 16.dp),
+                                                .padding(start = 8.dp, end = 8.dp, bottom = 16.dp),
                                             colors = CardDefaults.cardColors(containerColor = Color.White),
-                                            elevation = CardDefaults.cardElevation(8.dp)
+                                            elevation = CardDefaults.cardElevation(12.dp)
                                         ) {
-                                            Column(Modifier.padding(20.dp)) {
+                                            Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 10.dp)) {
                                                 Text(lead.name, fontWeight = FontWeight.Bold, fontSize = 22.sp)
                                                 Spacer(Modifier.height(10.dp))
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -689,13 +696,21 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                                     }
                                                     IconButton(
                                                         onClick = {
-                                                            val url = "https://wa.me/${lead.phone}"
+                                                            // Ensure phone number has country code
+                                                            val formattedPhone = if (lead.phone.startsWith("91")) lead.phone else "91" + lead.phone
+                                                            val message = Uri.encode("Hello, I am contacting you regarding your lead.")
+                                                            val url = "https://wa.me/$formattedPhone?text=$message"
                                                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                                                             context.startActivity(intent)
                                                         },
                                                         modifier = Modifier.size(54.dp)
                                                     ) {
-                                                        Icon(Icons.Default.Chat, contentDescription = "WhatsApp", tint = Color(0xFF25D366), modifier = Modifier.size(32.dp))
+                                                        Icon(
+                                                            painter = painterResource(id = R.drawable.ic_whatsapp),
+                                                            contentDescription = "WhatsApp",
+                                                            tint = Color.Unspecified,
+                                                            modifier = Modifier.size(32.dp)
+                                                        )
                                                     }
                                                     IconButton(
                                                         onClick = {
@@ -725,6 +740,20 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                                         modifier = Modifier.size(54.dp)
                                                     ) {
                                                         Icon(Icons.Default.LocationOn, contentDescription = "View Location", tint = Color(0xFFF57C00), modifier = Modifier.size(38.dp))
+                                                    }
+                                                    IconButton(
+                                                        onClick = {
+                                                            detailsLead = lead
+                                                            showDetailsDialog = true
+                                                        },
+                                                        modifier = Modifier.size(54.dp)
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Default.Info,
+                                                            contentDescription = "All Details",
+                                                            tint = Color(0xFF1976D2), // Bright blue
+                                                            modifier = Modifier.size(32.dp)
+                                                        )
                                                     }
                                                 }
                                             }
@@ -801,6 +830,10 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                 .padding(24.dp)
         ) {
             Icon(Icons.Default.Add, contentDescription = "Add Lead", tint = Color.White, modifier = Modifier.size(32.dp))
+        }
+        // Details Dialog
+        if (showDetailsDialog && detailsLead != null) {
+            LeadDetailsDialog(lead = detailsLead!!, onDismiss = { showDetailsDialog = false; detailsLead = null })
         }
     }
 }
@@ -1102,4 +1135,70 @@ fun ShowDatePickerDialog(
         dialog.show()
         onDispose { dialog.dismiss() }
     }
+}
+
+@Composable
+fun LeadDetailsDialog(lead: com.example.ercrm.data.model.Lead, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    var userLat by remember { mutableStateOf<Double?>(null) }
+    var userLng by remember { mutableStateOf<Double?>(null) }
+    var distance by remember { mutableStateOf<String?>(null) }
+
+    // Get user location once when dialog opens
+    LaunchedEffect(Unit) {
+        try {
+            val locationHelper = EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                com.example.ercrm.utils.LocationHelperEntryPoint::class.java
+            ).locationHelper()
+            val loc = locationHelper.getLastLocation()
+            userLat = loc.latitude
+            userLng = loc.longitude
+            if (lead.latitude != null && lead.longitude != null) {
+                distance = calculateDistance(userLat!!, userLng!!, lead.latitude, lead.longitude)
+            }
+        } catch (_: Exception) {}
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = Color.White,
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .wrapContentHeight()
+        ) {
+            Column(Modifier.padding(24.dp)) {
+                Text("Lead Details", fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.padding(bottom = 16.dp))
+                Text("Name: ${lead.name}", fontSize = 18.sp)
+                Text("Phone: ${lead.phone}", fontSize = 18.sp)
+                if (!lead.email.isNullOrBlank()) Text("Email: ${lead.email}", fontSize = 18.sp)
+                if (!lead.address.isNullOrBlank()) Text("Address: ${lead.address}", fontSize = 18.sp)
+                if (!lead.company.isNullOrBlank()) Text("Company: ${lead.company}", fontSize = 18.sp)
+                if (!lead.status?.name.isNullOrBlank()) Text("Status: ${lead.status.name}", fontSize = 18.sp)
+                if (!lead.follow_up_date.isNullOrBlank()) Text("Follow-up: ${lead.follow_up_date}", fontSize = 18.sp)
+                if (!lead.notes.isNullOrBlank()) Text("Notes: ${lead.notes}", fontSize = 18.sp)
+                if (!lead.description.isNullOrBlank()) Text("Description: ${lead.description}", fontSize = 18.sp)
+                if (!lead.lost_reason.isNullOrBlank()) Text("Lost Reason: ${lead.lost_reason}", fontSize = 18.sp)
+                if (!lead.closed_won_reason.isNullOrBlank()) Text("Closed Won Reason: ${lead.closed_won_reason}", fontSize = 18.sp)
+                if (distance != null) Text("Distance: $distance", fontSize = 18.sp, color = Color(0xFF388E3C))
+                Spacer(Modifier.height(18.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Close") }
+                }
+            }
+        }
+    }
+}
+
+fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): String {
+    val R = 6371 // Radius of the earth in km
+    val dLat = Math.toRadians(lat2 - lat1)
+    val dLon = Math.toRadians(lon2 - lon1)
+    val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    val distance = R * c // in km
+    return String.format(Locale.getDefault(), "%.2f km", distance)
 }
