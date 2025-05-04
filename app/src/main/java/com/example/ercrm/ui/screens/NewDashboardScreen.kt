@@ -554,10 +554,21 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
     var showErrorDialog by remember { mutableStateOf(false) }
     var showDetailsDialog by remember { mutableStateOf(false) }
     var detailsLead by remember { mutableStateOf<com.example.ercrm.data.model.Lead?>(null) }
+    var showAttendanceErrorDialog by remember { mutableStateOf(false) }
 
     // Fetch leads on first load
     LaunchedEffect(Unit) { leadsViewModel.fetchLeads() }
-    LaunchedEffect(error) { if (error != null) showErrorDialog = true }
+    
+    // Handle error state
+    LaunchedEffect(error) { 
+        if (error != null) {
+            if (error?.contains("Please mark your attendance") == true) {
+                showAttendanceErrorDialog = true
+            } else {
+                showErrorDialog = true
+            }
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         Column(
@@ -800,7 +811,39 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                 initialLead = dialogLead
             )
         }
-        // Error Dialog
+        // Attendance Error Dialog
+        if (showAttendanceErrorDialog) {
+            AlertDialog(
+                onDismissRequest = { 
+                    showAttendanceErrorDialog = false
+                    leadsViewModel.clearError()
+                },
+                title = { Text("Attendance Required") },
+                text = { Text("Please mark your attendance before storing a lead.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showAttendanceErrorDialog = false
+                            leadsViewModel.clearError()
+                            navController.navigate("attendance_dashboard")
+                        }
+                    ) {
+                        Text("Go to Attendance")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showAttendanceErrorDialog = false
+                            leadsViewModel.clearError()
+                        }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+        // Regular Error Dialog
         if (showErrorDialog && error != null) {
             AlertDialog(
                 onDismissRequest = {

@@ -50,12 +50,22 @@ class LeadsViewModel @Inject constructor(
                     fetchLeads()
                     onSuccess()
                 } else {
-                    _error.value = "Failed to create lead"
+                    try {
+                        val errorBody = response.errorBody()?.string()
+                        if (errorBody?.contains("Please mark your attendance") == true) {
+                            _error.value = "Please mark your attendance before storing a lead"
+                        } else {
+                            _error.value = errorBody ?: "Failed to create lead"
+                        }
+                    } catch (e: Exception) {
+                        _error.value = "Failed to create lead"
+                    }
                 }
             } catch (e: Exception) {
-                _error.value = e.message
+                _error.value = e.message ?: "An error occurred"
+            } finally {
+                _isLoading.value = false
             }
-            _isLoading.value = false
         }
     }
 
@@ -85,12 +95,22 @@ class LeadsViewModel @Inject constructor(
                     fetchLeads()
                     onSuccess()
                 } else {
-                    _error.value = "Failed to update lead"
+                    try {
+                        val errorBody = response.errorBody()?.string()
+                        if (errorBody?.contains("Please mark your attendance") == true) {
+                            _error.value = "Please mark your attendance before storing a lead"
+                        } else {
+                            _error.value = errorBody ?: "Failed to update lead"
+                        }
+                    } catch (e: Exception) {
+                        _error.value = "Failed to update lead"
+                    }
                 }
             } catch (e: Exception) {
-                _error.value = e.message
+                _error.value = e.message ?: "An error occurred"
+            } finally {
+                _isLoading.value = false
             }
-            _isLoading.value = false
         }
     }
 
