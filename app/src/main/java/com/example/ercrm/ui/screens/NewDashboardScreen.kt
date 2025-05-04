@@ -39,6 +39,14 @@ import com.example.ercrm.viewmodel.LeadsViewModel
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.window.Dialog
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.DisposableEffectScope
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 
 @Composable
 fun NewDashboardScreen(navController: NavHostController) {
@@ -616,7 +624,7 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                     Card(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(240.dp)
+                                            .height(280.dp)
                                             .padding(bottom = 16.dp),
                                         colors = CardDefaults.cardColors(containerColor = Color.White),
                                         elevation = CardDefaults.cardElevation(8.dp)
@@ -625,14 +633,14 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                             Text(lead.name, fontWeight = FontWeight.Bold, fontSize = 22.sp)
                                             Spacer(Modifier.height(10.dp))
                                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFF388E3C), modifier = Modifier.size(22.dp))
+                                                Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFF388E3C), modifier = Modifier.size(26.dp))
                                                 Spacer(Modifier.width(8.dp))
                                                 Text(lead.phone, fontSize = 18.sp)
                                             }
                                             if (!lead.email.isNullOrBlank()) {
                                                 Spacer(Modifier.height(8.dp))
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(Icons.Default.Email, contentDescription = null, tint = Color(0xFF1976D2), modifier = Modifier.size(22.dp))
+                                                    Icon(Icons.Default.Email, contentDescription = null, tint = Color(0xFF1976D2), modifier = Modifier.size(26.dp))
                                                     Spacer(Modifier.width(8.dp))
                                                     Text(lead.email, fontSize = 18.sp)
                                                 }
@@ -640,7 +648,7 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                             if (!lead.address.isNullOrBlank()) {
                                                 Spacer(Modifier.height(8.dp))
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(Icons.Default.Home, contentDescription = null, tint = OrangePrimary, modifier = Modifier.size(22.dp))
+                                                    Icon(Icons.Default.Home, contentDescription = null, tint = OrangePrimary, modifier = Modifier.size(26.dp))
                                                     Spacer(Modifier.width(8.dp))
                                                     Text(lead.address, fontSize = 18.sp)
                                                 }
@@ -648,7 +656,7 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                             if (!lead.follow_up_date.isNullOrBlank()) {
                                                 Spacer(Modifier.height(8.dp))
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = Color(0xFFD32F2F), modifier = Modifier.size(22.dp))
+                                                    Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = Color(0xFFD32F2F), modifier = Modifier.size(26.dp))
                                                     Spacer(Modifier.width(8.dp))
                                                     val formattedDate = try {
                                                         java.time.LocalDate.parse(lead.follow_up_date.substring(0,10)).format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"))
@@ -656,7 +664,7 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                                     Text("Follow-up: $formattedDate", fontSize = 18.sp, color = Color(0xFFD32F2F))
                                                 }
                                             }
-                                            Spacer(Modifier.height(16.dp))
+                                            Spacer(Modifier.height(20.dp))
                                             Row(
                                                 Modifier.fillMaxWidth(),
                                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -666,9 +674,9 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                                         val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${lead.phone}"))
                                                         context.startActivity(intent)
                                                     },
-                                                    modifier = Modifier.size(48.dp)
+                                                    modifier = Modifier.size(54.dp)
                                                 ) {
-                                                    Icon(Icons.Default.Phone, contentDescription = "Call", tint = Color(0xFF388E3C), modifier = Modifier.size(36.dp))
+                                                    Icon(Icons.Default.Phone, contentDescription = "Call", tint = Color(0xFF388E3C), modifier = Modifier.size(32.dp))
                                                 }
                                                 IconButton(
                                                     onClick = {
@@ -676,9 +684,9 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                                                         context.startActivity(intent)
                                                     },
-                                                    modifier = Modifier.size(48.dp)
+                                                    modifier = Modifier.size(54.dp)
                                                 ) {
-                                                    Icon(Icons.Default.Chat, contentDescription = "WhatsApp", tint = Color(0xFF25D366), modifier = Modifier.size(36.dp))
+                                                    Icon(Icons.Default.Chat, contentDescription = "WhatsApp", tint = Color(0xFF25D366), modifier = Modifier.size(32.dp))
                                                 }
                                                 IconButton(
                                                     onClick = {
@@ -686,15 +694,15 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                                         dialogStatusId = lead.status_id
                                                         showLeadDialog = true
                                                     },
-                                                    modifier = Modifier.size(48.dp)
+                                                    modifier = Modifier.size(54.dp)
                                                 ) {
-                                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF1976D2), modifier = Modifier.size(36.dp))
+                                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF1976D2), modifier = Modifier.size(32.dp))
                                                 }
                                                 IconButton(
                                                     onClick = { leadsViewModel.deleteLead(lead.id) },
-                                                    modifier = Modifier.size(48.dp)
+                                                    modifier = Modifier.size(54.dp)
                                                 ) {
-                                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFD32F2F), modifier = Modifier.size(36.dp))
+                                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFD32F2F), modifier = Modifier.size(32.dp))
                                                 }
                                                 IconButton(
                                                     onClick = {
@@ -705,9 +713,9 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                                             context.startActivity(mapIntent)
                                                         }
                                                     },
-                                                    modifier = Modifier.size(48.dp)
+                                                    modifier = Modifier.size(54.dp)
                                                 ) {
-                                                    Icon(Icons.Default.LocationOn, contentDescription = "View Location", tint = Color(0xFFF57C00), modifier = Modifier.size(36.dp))
+                                                    Icon(Icons.Default.LocationOn, contentDescription = "View Location", tint = Color(0xFFF57C00), modifier = Modifier.size(38.dp))
                                                 }
                                             }
                                         }
@@ -799,6 +807,7 @@ fun AddLeadDialog(
 ) {
     var name by remember { mutableStateOf(initialLead?.name ?: "") }
     var phone by remember { mutableStateOf(initialLead?.phone ?: "") }
+    var phoneError by remember { mutableStateOf<String?>(null) }
     var email by remember { mutableStateOf(initialLead?.email ?: "") }
     var address by remember { mutableStateOf(initialLead?.address ?: "") }
     var statusId by remember { mutableStateOf(initialLead?.status_id ?: initialStatusId ?: statuses.firstOrNull()?.id ?: 0) }
@@ -811,6 +820,7 @@ fun AddLeadDialog(
     val context = LocalContext.current
     val today = java.time.LocalDate.now()
     val dateFormatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy")
+    var statusDropdownExpanded by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Box(
@@ -835,42 +845,76 @@ fun AddLeadDialog(
                     Text(if (initialLead == null) "Add Lead" else "Edit Lead", fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.padding(bottom = 16.dp))
                     OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name*") }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone*") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = {
+                            if (it.length <= 10 && it.all { ch -> ch.isDigit() }) {
+                                phone = it
+                            }
+                            phoneError = null
+                        },
+                        label = { Text("Phone*") },
+                        isError = phoneError != null,
+                        supportingText = { if (phoneError != null) Text(phoneError!!, color = Color.Red, fontSize = 12.sp) },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email*") }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    DropdownMenuBox(
-                        label = "Status*",
-                        options = statuses.map { it.name },
-                        selectedIndex = statuses.indexOfFirst { it.id == statusId },
-                        onSelectedIndexChange = { statusId = statuses[it].id },
-                        modifier = Modifier.fillMaxWidth()
+                    // Status Dropdown (improved)
+                    OutlinedTextField(
+                        value = statuses.find { it.id == statusId }?.name ?: "",
+                        onValueChange = {},
+                        label = { Text("Status*") },
+                        readOnly = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { statusDropdownExpanded = true }
                     )
+                    DropdownMenu(
+                        expanded = statusDropdownExpanded,
+                        onDismissRequest = { statusDropdownExpanded = false }
+                    ) {
+                        statuses.forEach { status ->
+                            DropdownMenuItem(
+                                onClick = {
+                                    statusId = status.id
+                                    statusDropdownExpanded = false
+                                },
+                                text = { Text(status.name) }
+                            )
+                        }
+                    }
                     Spacer(Modifier.height(8.dp))
+                    // Follow-up Date with calendar icon clickable
                     OutlinedTextField(
                         value = followUpDate,
                         onValueChange = {},
                         label = { Text("Follow-up Date (dd-MM-yyyy)*") },
                         readOnly = true,
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.CalendarMonth,
+                                contentDescription = "Pick date",
+                                modifier = Modifier.clickable { showDatePicker = true }
+                            )
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { showDatePicker = true }
                     )
                     if (showDatePicker) {
-                        LaunchedEffect(showDatePicker) {
-                            val initial = try { java.time.LocalDate.parse(followUpDate, dateFormatter) } catch (e: Exception) { today }
-                            android.app.DatePickerDialog(
-                                context,
-                                { _, year, month, dayOfMonth ->
-                                    val picked = java.time.LocalDate.of(year, month + 1, dayOfMonth)
-                                    followUpDate = picked.format(dateFormatter)
-                                    showDatePicker = false
-                                },
-                                initial.year, initial.monthValue - 1, initial.dayOfMonth
-                            ).show()
-                        }
+                        val initial = try { java.time.LocalDate.parse(followUpDate, dateFormatter) } catch (e: Exception) { today }
+                        ShowDatePickerDialog(
+                            initialDate = initial,
+                            onDateSelected = { picked ->
+                                followUpDate = picked.format(dateFormatter)
+                            },
+                            onDismiss = { showDatePicker = false }
+                        )
                     }
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text("Notes") }, modifier = Modifier.fillMaxWidth())
@@ -881,6 +925,11 @@ fun AddLeadDialog(
                         TextButton(onClick = onDismiss) { Text("Cancel") }
                         Spacer(Modifier.width(8.dp))
                         Button(onClick = {
+                            // Phone validation: 10 digits, starts with 6-9
+                            if (phone.length != 10 || phone[0] !in '6'..'9') {
+                                phoneError = "Enter valid 10-digit Indian number"
+                                return@Button
+                            }
                             onAdd(
                                 com.example.ercrm.data.model.LeadRequest(
                                     name = name,
@@ -923,5 +972,27 @@ fun DropdownMenuBox(label: String, options: List<String>, selectedIndex: Int, on
                 }, text = { Text(option) })
             }
         }
+    }
+}
+
+@Composable
+fun ShowDatePickerDialog(
+    initialDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    DisposableEffect(Unit) {
+        val dialog = android.app.DatePickerDialog(
+            context,
+            { _, year, month, dayOfMonth ->
+                onDateSelected(LocalDate.of(year, month + 1, dayOfMonth))
+                onDismiss()
+            },
+            initialDate.year, initialDate.monthValue - 1, initialDate.dayOfMonth
+        )
+        dialog.setOnCancelListener { onDismiss() }
+        dialog.show()
+        onDispose { dialog.dismiss() }
     }
 }
