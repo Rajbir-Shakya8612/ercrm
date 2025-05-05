@@ -10,6 +10,9 @@ import com.example.ercrm.data.model.LocationData
 import com.example.ercrm.data.model.Lead
 import com.example.ercrm.data.model.LeadRequest
 import com.example.ercrm.data.model.LeadsResponse
+import com.example.ercrm.data.model.FollowUpRequest
+import com.example.ercrm.data.model.FollowUpResponse
+import com.example.ercrm.data.model.FollowUpsResponse
 //import com.example.ercrm.data.model.NewDashboardScreen
 import retrofit2.Response
 import retrofit2.http.*
@@ -63,6 +66,17 @@ interface ApiService {
     @Headers("Accept: application/json")
     @DELETE("api/salesperson/leads/{id}")
     suspend fun deleteLead(@Path("id") id: Int): Response<Unit>
+
+    @Headers("Accept: application/json")
+    @GET("api/salesperson/leads/follow-ups")
+    suspend fun getFollowUps(): Response<FollowUpsResponse>
+
+    @Headers("Accept: application/json")
+    @POST("api/salesperson/leads/{lead}/follow-up")
+    suspend fun scheduleFollowUp(
+        @Path("lead") leadId: Int,
+        @Body request: FollowUpRequest
+    ): Response<FollowUpResponse>
 
 //    @Headers("Accept: application/json")
 //    @GET("api/salesperson/dashboard")
