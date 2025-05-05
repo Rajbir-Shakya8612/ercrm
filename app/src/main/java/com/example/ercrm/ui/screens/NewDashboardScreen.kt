@@ -177,7 +177,7 @@ fun DashboardCard(index: Int) {
 
 @Composable
 fun DashboardTabs(selectedTab: Int, onTabSelected: (Int) -> Unit) {
-    val tabs = listOf("Home", "Shop", "Discover")
+    val tabs = listOf("Home", "Analytics", "Performance")
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -641,130 +641,133 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
                                 }
                             }
                             if (leadsForStatus.isNotEmpty()) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                // Wrap cards in a vertical scrollable area
+                                Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .horizontalScroll(rememberScrollState())
+                                        .heightIn(max = 650.dp) // increased for better view
+                                        .verticalScroll(rememberScrollState())
                                 ) {
-                                    leadsForStatus.forEach { lead ->
-                                        Card(
-                                            modifier = Modifier
-                                                .width(320.dp)
-                                                .height(280.dp)
-                                                .padding(start = 8.dp, end = 8.dp, bottom = 16.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                                            elevation = CardDefaults.cardElevation(12.dp)
-                                        ) {
-                                            Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 10.dp)) {
-                                                Text(lead.name, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                                                Spacer(Modifier.height(10.dp))
-                                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFF388E3C), modifier = Modifier.size(26.dp))
-                                                    Spacer(Modifier.width(8.dp))
-                                                    Text(lead.phone, fontSize = 18.sp)
-                                                }
-                                                if (!lead.email.isNullOrBlank()) {
-                                                    Spacer(Modifier.height(8.dp))
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        leadsForStatus.forEach { lead ->
+                                            Card(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 6.dp, horizontal = 8.dp),
+                                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                                elevation = CardDefaults.cardElevation(12.dp)
+                                            ) {
+                                                Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 10.dp)) {
+                                                    Text(lead.name, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                                                    Spacer(Modifier.height(10.dp))
                                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Icon(Icons.Default.Email, contentDescription = null, tint = Color(0xFF1976D2), modifier = Modifier.size(26.dp))
+                                                        Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFF388E3C), modifier = Modifier.size(26.dp))
                                                         Spacer(Modifier.width(8.dp))
-                                                        Text(lead.email, fontSize = 18.sp)
+                                                        Text(lead.phone, fontSize = 18.sp)
                                                     }
-                                                }
-                                                if (!lead.address.isNullOrBlank()) {
-                                                    Spacer(Modifier.height(8.dp))
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Icon(Icons.Default.Home, contentDescription = null, tint = OrangePrimary, modifier = Modifier.size(26.dp))
-                                                        Spacer(Modifier.width(8.dp))
-                                                        Text(lead.address, fontSize = 18.sp)
+                                                    if (!lead.email.isNullOrBlank()) {
+                                                        Spacer(Modifier.height(8.dp))
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Icon(Icons.Default.Email, contentDescription = null, tint = Color(0xFF1976D2), modifier = Modifier.size(26.dp))
+                                                            Spacer(Modifier.width(8.dp))
+                                                            Text(lead.email, fontSize = 18.sp)
+                                                        }
                                                     }
-                                                }
-                                                if (!lead.follow_up_date.isNullOrBlank()) {
-                                                    Spacer(Modifier.height(8.dp))
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = Color(0xFFD32F2F), modifier = Modifier.size(26.dp))
-                                                        Spacer(Modifier.width(8.dp))
-                                                        val formattedDate = try {
-                                                            java.time.LocalDate.parse(lead.follow_up_date.substring(0,10)).format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"))
-                                                        } catch (e: Exception) { lead.follow_up_date }
-                                                        Text("Follow-up: $formattedDate", fontSize = 18.sp, color = Color(0xFFD32F2F))
+                                                    if (!lead.address.isNullOrBlank()) {
+                                                        Spacer(Modifier.height(8.dp))
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Icon(Icons.Default.Home, contentDescription = null, tint = OrangePrimary, modifier = Modifier.size(26.dp))
+                                                            Spacer(Modifier.width(8.dp))
+                                                            Text(lead.address, fontSize = 18.sp)
+                                                        }
                                                     }
-                                                }
-                                                Spacer(Modifier.height(20.dp))
-                                                Row(
-                                                    Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.SpaceBetween
-                                                ) {
-                                                    IconButton(
-                                                        onClick = {
-                                                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${lead.phone}"))
-                                                            context.startActivity(intent)
-                                                        },
-                                                        modifier = Modifier.size(54.dp)
+                                                    if (!lead.follow_up_date.isNullOrBlank()) {
+                                                        Spacer(Modifier.height(8.dp))
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = Color(0xFFD32F2F), modifier = Modifier.size(26.dp))
+                                                            Spacer(Modifier.width(8.dp))
+                                                            Text("Follow-up: " + try {
+                                                                java.time.LocalDate.parse(lead.follow_up_date.substring(0,10)).format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                                                            } catch (e: Exception) { lead.follow_up_date }, fontSize = 18.sp)
+                                                        }
+                                                    }
+                                                    Spacer(Modifier.height(20.dp))
+                                                    Row(
+                                                        Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween
                                                     ) {
-                                                        Icon(Icons.Default.Phone, contentDescription = "Call", tint = Color(0xFF388E3C), modifier = Modifier.size(32.dp))
-                                                    }
-                                                    IconButton(
-                                                        onClick = {
-                                                            // Ensure phone number has country code
-                                                            val formattedPhone = if (lead.phone.startsWith("91")) lead.phone else "91" + lead.phone
-                                                            val message = Uri.encode("Hello, I am contacting you regarding your lead.")
-                                                            val url = "https://wa.me/$formattedPhone?text=$message"
-                                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                                                            context.startActivity(intent)
-                                                        },
-                                                        modifier = Modifier.size(54.dp)
-                                                    ) {
-                                                        Icon(
-                                                            painter = painterResource(id = R.drawable.ic_whatsapp),
-                                                            contentDescription = "WhatsApp",
-                                                            tint = Color.Unspecified,
-                                                            modifier = Modifier.size(32.dp)
-                                                        )
-                                                    }
-                                                    IconButton(
-                                                        onClick = {
-                                                            dialogLead = lead
-                                                            dialogStatusId = lead.status_id
-                                                            showLeadDialog = true
-                                                        },
-                                                        modifier = Modifier.size(54.dp)
-                                                    ) {
-                                                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF1976D2), modifier = Modifier.size(32.dp))
-                                                    }
-                                                    IconButton(
-                                                        onClick = { leadsViewModel.deleteLead(lead.id) },
-                                                        modifier = Modifier.size(54.dp)
-                                                    ) {
-                                                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFD32F2F), modifier = Modifier.size(32.dp))
-                                                    }
-                                                    IconButton(
-                                                        onClick = {
-                                                            if (lead.latitude != null && lead.longitude != null) {
-                                                                val gmmIntentUri = Uri.parse("geo:${lead.latitude},${lead.longitude}?q=${lead.latitude},${lead.longitude}")
-                                                                val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-                                                                mapIntent.setPackage("com.google.android.apps.maps")
-                                                                context.startActivity(mapIntent)
-                                                            }
-                                                        },
-                                                        modifier = Modifier.size(54.dp)
-                                                    ) {
-                                                        Icon(Icons.Default.LocationOn, contentDescription = "View Location", tint = Color(0xFFF57C00), modifier = Modifier.size(38.dp))
-                                                    }
-                                                    IconButton(
-                                                        onClick = {
-                                                            detailsLead = lead
-                                                            showDetailsDialog = true
-                                                        },
-                                                        modifier = Modifier.size(54.dp)
-                                                    ) {
-                                                        Icon(
-                                                            Icons.Default.Info,
-                                                            contentDescription = "All Details",
-                                                            tint = Color(0xFF1976D2), // Bright blue
-                                                            modifier = Modifier.size(32.dp)
-                                                        )
+                                                        IconButton(
+                                                            onClick = {
+                                                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${lead.phone}"))
+                                                                context.startActivity(intent)
+                                                            },
+                                                            modifier = Modifier.size(54.dp)
+                                                        ) {
+                                                            Icon(Icons.Default.Phone, contentDescription = "Call", tint = Color(0xFF388E3C), modifier = Modifier.size(32.dp))
+                                                        }
+                                                        IconButton(
+                                                            onClick = {
+                                                                val formattedPhone = if (lead.phone.startsWith("91")) lead.phone else "91" + lead.phone
+                                                                val message = Uri.encode("Hello, I am contacting you regarding your lead.")
+                                                                val url = "https://wa.me/$formattedPhone?text=$message"
+                                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                                                context.startActivity(intent)
+                                                            },
+                                                            modifier = Modifier.size(54.dp)
+                                                        ) {
+                                                            Icon(
+                                                                painter = painterResource(id = R.drawable.ic_whatsapp),
+                                                                contentDescription = "WhatsApp",
+                                                                tint = Color.Unspecified,
+                                                                modifier = Modifier.size(32.dp)
+                                                            )
+                                                        }
+                                                        IconButton(
+                                                            onClick = {
+                                                                dialogLead = lead
+                                                                dialogStatusId = lead.status_id
+                                                                showLeadDialog = true
+                                                            },
+                                                            modifier = Modifier.size(54.dp)
+                                                        ) {
+                                                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF1976D2), modifier = Modifier.size(32.dp))
+                                                        }
+                                                        IconButton(
+                                                            onClick = { leadsViewModel.deleteLead(lead.id) },
+                                                            modifier = Modifier.size(54.dp)
+                                                        ) {
+                                                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFD32F2F), modifier = Modifier.size(32.dp))
+                                                        }
+                                                        IconButton(
+                                                            onClick = {
+                                                                if (lead.latitude != null && lead.longitude != null) {
+                                                                    val gmmIntentUri = Uri.parse("geo:${lead.latitude},${lead.longitude}?q=${lead.latitude},${lead.longitude}")
+                                                                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                                                                    mapIntent.setPackage("com.google.android.apps.maps")
+                                                                    context.startActivity(mapIntent)
+                                                                }
+                                                            },
+                                                            modifier = Modifier.size(54.dp)
+                                                        ) {
+                                                            Icon(Icons.Default.LocationOn, contentDescription = "View Location", tint = Color(0xFFF57C00), modifier = Modifier.size(38.dp))
+                                                        }
+                                                        IconButton(
+                                                            onClick = {
+                                                                detailsLead = lead
+                                                                showDetailsDialog = true
+                                                            },
+                                                            modifier = Modifier.size(54.dp)
+                                                        ) {
+                                                            Icon(
+                                                                Icons.Default.Info,
+                                                                contentDescription = "All Details",
+                                                                tint = Color(0xFF1976D2),
+                                                                modifier = Modifier.size(32.dp)
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
@@ -870,7 +873,7 @@ fun LeadsDashboardScreen(navController: NavHostController, leadsViewModel: Leads
             containerColor = OrangePrimary,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(24.dp)
+                .padding(end = 36.dp, bottom = 32.dp)
         ) {
             Icon(Icons.Default.Add, contentDescription = "Add Lead", tint = Color.White, modifier = Modifier.size(32.dp))
         }
@@ -1219,7 +1222,9 @@ fun LeadDetailsDialog(lead: com.example.ercrm.data.model.Lead, onDismiss: () -> 
                 if (!lead.address.isNullOrBlank()) Text("Address: ${lead.address}", fontSize = 18.sp)
                 if (!lead.company.isNullOrBlank()) Text("Company: ${lead.company}", fontSize = 18.sp)
                 if (!lead.status?.name.isNullOrBlank()) Text("Status: ${lead.status.name}", fontSize = 18.sp)
-                if (!lead.follow_up_date.isNullOrBlank()) Text("Follow-up: ${lead.follow_up_date}", fontSize = 18.sp)
+                if (!lead.follow_up_date.isNullOrBlank()) Text("Follow-up: " + try {
+                    java.time.LocalDate.parse(lead.follow_up_date.substring(0,10)).format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                } catch (e: Exception) { lead.follow_up_date }, fontSize = 18.sp)
                 if (!lead.notes.isNullOrBlank()) Text("Notes: ${lead.notes}", fontSize = 18.sp)
                 if (!lead.description.isNullOrBlank()) Text("Description: ${lead.description}", fontSize = 18.sp)
                 if (!lead.lost_reason.isNullOrBlank()) Text("Lost Reason: ${lead.lost_reason}", fontSize = 18.sp)
