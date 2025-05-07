@@ -78,6 +78,10 @@ interface ApiService {
         @Body request: FollowUpRequest
     ): Response<FollowUpResponse>
 
+    @Headers("Accept: application/json")
+    @GET("api/salesperson/leads/{lead}")
+    suspend fun getLeadFollowUpDetails(@Path("lead") leadId: Int): Response<LeadsResponse>
+
 //    @Headers("Accept: application/json")
 //    @GET("api/salesperson/dashboard")
 //    suspend fun getSalespersonDashboard(): Response<SalespersonDashboardResponse>

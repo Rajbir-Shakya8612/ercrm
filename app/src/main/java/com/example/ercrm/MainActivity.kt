@@ -104,7 +104,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
-                        loginState is LoginState.LoggedOut || 
+                        loginState is LoginState.LoggedOut ||
                         loginState is LoginState.Idle ||
                         loginState is LoginState.Error -> {
                             LoginScreen(
