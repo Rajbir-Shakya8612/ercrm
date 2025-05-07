@@ -8,12 +8,15 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import android.util.Log
 import javax.inject.Inject
 
 @HiltViewModel
 class LeadsViewModel @Inject constructor(
     private val apiService: ApiService
 ) : ViewModel() {
+
+    private val TAG = "LeadsViewModel"
 
     private val _leadsState = MutableStateFlow<LeadsResponse?>(null)
     val leadsState: StateFlow<LeadsResponse?> = _leadsState
@@ -23,6 +26,34 @@ class LeadsViewModel @Inject constructor(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
+
+    fun fetchLeadDetails(leadId: Int) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                Log.d(TAG, "Fetching details for lead: $leadId")
+                val response = apiService.getLeadDetails(leadId)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val leadResponse = response.body()
+                    Log.d(TAG, "Successfully fetched lead details")
+                    // Convert single lead response to LeadsResponse format
+                    _leadsState.value = LeadsResponse(
+                        lead_statuses = leadResponse?.leadStatuses ?: emptyList(),
+                        leads = listOf(leadResponse?.lead ?: throw IllegalStateException("Lead not found"))
+                    )
+                } else {
+                    val errorMessage = response.body()?.message ?: "Failed to fetch lead details"
+                    Log.e(TAG, "Error fetching lead details: $errorMessage")
+                    _error.value = errorMessage
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception while fetching lead details", e)
+                _error.value = e.message ?: "An error occurred"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 
     fun fetchLeads() {
         viewModelScope.launch {

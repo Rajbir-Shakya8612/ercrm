@@ -13,6 +13,7 @@ import com.example.ercrm.data.model.LeadsResponse
 import com.example.ercrm.data.model.FollowUpRequest
 import com.example.ercrm.data.model.FollowUpResponse
 import com.example.ercrm.data.model.FollowUpsResponse
+import com.example.ercrm.data.model.LeadResponse
 //import com.example.ercrm.data.model.NewDashboardScreen
 import retrofit2.Response
 import retrofit2.http.*
@@ -72,15 +73,15 @@ interface ApiService {
     suspend fun getFollowUps(): Response<FollowUpsResponse>
 
     @Headers("Accept: application/json")
+    @GET("api/salesperson/leads/{lead}")
+    suspend fun getLeadDetails(@Path("lead") leadId: Int): Response<LeadResponse>
+
+    @Headers("Accept: application/json")
     @POST("api/salesperson/leads/{lead}/follow-up")
     suspend fun scheduleFollowUp(
         @Path("lead") leadId: Int,
         @Body request: FollowUpRequest
     ): Response<FollowUpResponse>
-
-    @Headers("Accept: application/json")
-    @GET("api/salesperson/leads/{lead}")
-    suspend fun getLeadFollowUpDetails(@Path("lead") leadId: Int): Response<LeadsResponse>
 
 //    @Headers("Accept: application/json")
 //    @GET("api/salesperson/dashboard")

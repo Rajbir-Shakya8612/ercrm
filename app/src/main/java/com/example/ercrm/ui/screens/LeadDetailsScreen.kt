@@ -9,6 +9,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.ercrm.viewmodel.LeadsViewModel
 import com.example.ercrm.data.model.Lead
+import android.util.Log
 import com.example.ercrm.ui.screens.LeadDetailsDialog
 
 @Composable
@@ -19,12 +20,13 @@ fun LeadDetailsScreen(navController: NavHostController, leadId: Int, leadsViewMo
     var showDialog by remember { mutableStateOf(false) }
     var foundLead by remember { mutableStateOf<Lead?>(null) }
 
-    // Fetch leads if not already loaded
-    LaunchedEffect(Unit) {
-        if (leadsState == null) leadsViewModel.fetchLeads()
+    // Fetch lead details when screen is opened
+    LaunchedEffect(leadId) {
+        Log.d("LeadDetailsScreen", "Fetching details for lead: $leadId")
+        leadsViewModel.fetchLeadDetails(leadId)
     }
 
-    // Find the lead by ID
+    // Update UI when lead details are loaded
     LaunchedEffect(leadsState) {
         foundLead = leadsState?.leads?.find { it.id == leadId }
         showDialog = foundLead != null
@@ -41,7 +43,7 @@ fun LeadDetailsScreen(navController: NavHostController, leadId: Int, leadsViewMo
                 Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
                     Text("Error: $error", color = MaterialTheme.colorScheme.error)
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = { leadsViewModel.fetchLeads() }) { Text("Retry") }
+                    Button(onClick = { leadsViewModel.fetchLeadDetails(leadId) }) { Text("Retry") }
                 }
             }
             foundLead != null && showDialog -> {

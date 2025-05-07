@@ -27,10 +27,11 @@ class FollowUpCheckWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
-            Log.d(TAG, "Starting follow-up check")
+            Log.d(TAG, "Starting follow-up check worker")
             val response = apiService.getFollowUps()
             
-            if (response.isSuccessful && response.body()?.success == true) {
+            if (response.isSuccessful) {
+                Log.d(TAG, "API call successful")
                 val followUps = response.body()?.followUps ?: emptyList()
                 Log.d(TAG, "Received ${followUps.size} follow-ups")
                 
@@ -47,7 +48,7 @@ class FollowUpCheckWorker @AssistedInject constructor(
 
                 // Show notifications for each follow-up
                 sortedFollowUps.forEach { followUp ->
-                    Log.d(TAG, "Showing notification for follow-up: ${followUp.name} (${followUp.daysLeft} days left)")
+                    Log.d(TAG, "Processing follow-up: ${followUp.name} (${followUp.daysLeft} days left)")
                     notificationService.showFollowUpNotification(followUp)
                 }
 
@@ -59,7 +60,7 @@ class FollowUpCheckWorker @AssistedInject constructor(
                 Result.failure()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error in follow-up check", e)
+            Log.e(TAG, "Error in follow-up check worker", e)
             Result.failure()
         }
     }

@@ -166,19 +166,35 @@ class MainActivity : ComponentActivity() {
     private fun handleNotificationIntent(intent: Intent) {
         val screen = intent.getStringExtra("screen")
         val leadId = intent.getIntExtra("lead_id", -1)
-        Log.d(TAG, "Handling notification intent: screen=$screen, leadId=$leadId")
+        val action = intent.action
+        Log.d(TAG, "Handling notification intent: action=$action, screen=$screen, leadId=$leadId")
 
-        when {
-            screen == "lead_details" && leadId != -1 -> {
-                Log.d(TAG, "Navigating to lead details: $leadId")
-                navController?.navigate("lead_details/$leadId")
+        when (action) {
+            "com.example.ercrm.VIEW_LEAD_DETAILS" -> {
+                if (leadId != -1) {
+                    Log.d(TAG, "Navigating to lead details: $leadId")
+                    navController?.navigate("lead_details/$leadId")
+                }
             }
-            screen == "follow_ups" -> {
+            "com.example.ercrm.VIEW_FOLLOW_UPS" -> {
                 Log.d(TAG, "Navigating to follow-ups screen")
                 navController?.navigate("follow_ups")
             }
             else -> {
-                Log.w(TAG, "No valid screen found in notification")
+                // Fallback to old behavior
+                when {
+                    screen == "lead_details" && leadId != -1 -> {
+                        Log.d(TAG, "Navigating to lead details: $leadId")
+                        navController?.navigate("lead_details/$leadId")
+                    }
+                    screen == "follow_ups" -> {
+                        Log.d(TAG, "Navigating to follow-ups screen")
+                        navController?.navigate("follow_ups")
+                    }
+                    else -> {
+                        Log.w(TAG, "No valid screen found in notification")
+                    }
+                }
             }
         }
     }
