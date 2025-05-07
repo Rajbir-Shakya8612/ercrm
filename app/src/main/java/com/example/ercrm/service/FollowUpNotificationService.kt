@@ -36,32 +36,72 @@ class FollowUpNotificationService @Inject constructor(
             ).apply {
                 description = channelDescription
                 enableVibration(true)
+                enableLights(true)
+                setShowBadge(true)
+                vibrationPattern = longArrayOf(0, 500, 200, 500)
             }
             notificationManager.createNotificationChannel(channel)
         }
     }
 
     fun showFollowUpNotification(followUp: FollowUp) {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        // Create intent for lead details
+        val leadDetailsIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("lead_id", followUp.id)
+            putExtra("screen", "lead_details")
+        }
+
+        // Create intent for follow-ups screen
+        val followUpsIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("screen", "follow_ups")
         }
 
-        val pendingIntent = PendingIntent.getActivity(
+        val leadDetailsPendingIntent = PendingIntent.getActivity(
             context,
             followUp.id,
-            intent,
+            leadDetailsIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val followUpsPendingIntent = PendingIntent.getActivity(
+            context,
+            followUp.id + 1000, // Different request code to avoid conflicts
+            followUpsIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val title = if (followUp.isOverdue) "⚠️ Overdue Follow-up" else "🔔 Follow-up Reminder"
+        val content = buildString {
+            append("Follow-up with ${followUp.name} ")
+            when {
+                followUp.isOverdue -> append("was due ${Math.abs(followUp.daysLeft)} day(s) ago!")
+                followUp.daysLeft == 0 -> append("scheduled for today!")
+                else -> append("in ${followUp.daysLeft} day(s).")
+            }
+        }
+
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(if (followUp.isOverdue) "⚠️ Overdue Follow-up" else "🔔 Follow-up Reminder")
-            .setContentText("Follow-up with ${followUp.name} ${followUp.readableDiff}")
+            .setContentTitle(title)
+            .setContentText(content)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(content))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
-            .setContentIntent(pendingIntent)
+            .setContentIntent(leadDetailsPendingIntent)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .addAction(
+                R.drawable.ic_notification,
+                "View Lead",
+                leadDetailsPendingIntent
+            )
+            .addAction(
+                R.drawable.ic_notification,
+                "View All Follow-ups",
+                followUpsPendingIntent
+            )
             .build()
 
         notificationManager.notify(followUp.id, notification)
@@ -69,5 +109,9 @@ class FollowUpNotificationService @Inject constructor(
 
     fun cancelNotification(notificationId: Int) {
         notificationManager.cancel(notificationId)
+    }
+
+    fun cancelAllNotifications() {
+        notificationManager.cancelAll()
     }
 } 

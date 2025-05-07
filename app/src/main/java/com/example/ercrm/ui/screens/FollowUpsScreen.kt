@@ -68,6 +68,10 @@ fun FollowUpsScreen(
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
+            Spacer(modifier = Modifier.weight(1f))
+            IconButton(onClick = { viewModel.fetchFollowUps() }) {
+                Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = Color.Black)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -84,7 +88,23 @@ fun FollowUpsScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text("No follow-ups found", color = Color.Gray)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        Icons.Default.NotificationsOff,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "No follow-ups found",
+                        color = Color.Gray,
+                        fontSize = 16.sp
+                    )
+                }
             }
         } else {
             LazyColumn(
@@ -96,6 +116,9 @@ fun FollowUpsScreen(
                         onScheduleClick = {
                             selectedFollowUp = followUp
                             showScheduleDialog = true
+                        },
+                        onLeadClick = {
+                            navController.navigate("lead_details/${followUp.id}")
                         }
                     )
                 }
@@ -147,12 +170,13 @@ fun FollowUpsScreen(
 @Composable
 fun FollowUpCard(
     followUp: com.example.ercrm.data.model.FollowUp,
-    onScheduleClick: () -> Unit
+    onScheduleClick: () -> Unit,
+    onLeadClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onScheduleClick),
+            .clickable(onClick = onLeadClick),
         colors = CardDefaults.cardColors(
             containerColor = if (followUp.isOverdue) Color(0xFFFFEBEE) else Color(0xFFE8F5E9)
         ),
@@ -163,12 +187,28 @@ fun FollowUpCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(
-                text = followUp.name,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (followUp.isOverdue) Color(0xFFD32F2F) else Color(0xFF388E3C)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = followUp.name,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (followUp.isOverdue) Color(0xFFD32F2F) else Color(0xFF388E3C)
+                )
+                IconButton(
+                    onClick = onScheduleClick,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = "Schedule follow-up",
+                        tint = if (followUp.isOverdue) Color(0xFFD32F2F) else Color(0xFF388E3C)
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically
